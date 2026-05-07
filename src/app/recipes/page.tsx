@@ -165,6 +165,8 @@ export default function RecipesPage() {
     setStatus("loading");
     setData(null);
     setMessageIndex(0);
+    setGramsMode("grams");
+    setBatchDays(1);
 
     clearIntervalSafe();
     intervalRef.current = window.setInterval(() => {
@@ -445,14 +447,17 @@ export default function RecipesPage() {
                     </section>
 
                     <section>
-                      <div className="rounded-2xl border border-[#E9D7C5] bg-[#FAF7F2] p-4">
-                        <div className="grid grid-cols-4 gap-3">
-                          <Stat label="Calories" value={`${recipe.nutrition_per_day.calories}`} />
-                          <Stat label="Protein" value={`${recipe.nutrition_per_day.protein_g} g`} />
-                          <Stat label="Fat" value={`${recipe.nutrition_per_day.fat_g} g`} />
-                          <Stat label="Carbs" value={`${recipe.nutrition_per_day.carbs_g} g`} />
-                        </div>
-                        <p className="mt-3 text-sm text-[#6A5445]">
+                      <div className="rounded-2xl border border-[#E9D7C5] bg-[#FAF7F2] px-5 py-4">
+                        <p className="text-sm font-semibold text-[#C97D4E]">
+                          Per day &mdash;{" "}
+                          <span className="font-normal text-[#2C2416]">
+                            {recipe.nutrition_per_day.calories} kcal &middot;{" "}
+                            {recipe.nutrition_per_day.protein_g}g protein &middot;{" "}
+                            {recipe.nutrition_per_day.fat_g}g fat &middot;{" "}
+                            {recipe.nutrition_per_day.carbs_g}g carbs
+                          </span>
+                        </p>
+                        <p className="mt-2 text-sm text-[#6A5445]">
                           {recipe.nutrition_per_day.notes}
                         </p>
                       </div>
@@ -465,7 +470,7 @@ export default function RecipesPage() {
             {data.supplement_recommendations.length > 0 && (
               <section className="rounded-3xl border border-[#E9D7C5] bg-white p-7">
                 <h3 className="font-heading text-2xl text-[#2C2416]">
-                  Recommended supplements for {dogName}
+                  A little extra support for {dogName} 🐾
                 </h3>
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                   {data.supplement_recommendations.map((s) => (
@@ -515,17 +520,6 @@ export default function RecipesPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-[#E9D7C5] bg-white px-3 py-3 text-center">
-      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#C97D4E]">
-        {label}
-      </div>
-      <div className="mt-1 font-heading text-[#2C2416]">{value}</div>
     </div>
   );
 }
