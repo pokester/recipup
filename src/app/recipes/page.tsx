@@ -126,16 +126,7 @@ function safetyBadge(score: number) {
 export default function RecipesPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "results" | "error">("loading");
-  const [dogProfile] = useState<DogProfile | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = window.localStorage.getItem("recipup_dog_profile");
-      if (!raw) return null;
-      return JSON.parse(raw) as DogProfile;
-    } catch {
-      return null;
-    }
-  });
+  const [dogProfile, setDogProfile] = useState<DogProfile | null>(null);
   const [data, setData] = useState<GenerateRecipesResponse | null>(null);
 
   const [messageIndex, setMessageIndex] = useState(0);
@@ -197,15 +188,20 @@ export default function RecipesPage() {
   );
 
   useEffect(() => {
-    if (!dogProfile) {
+    try {
+      const raw = window.localStorage.getItem("recipup_dog_profile");
+      if (!raw) { router.replace("/onboard"); return; }
+      setDogProfile(JSON.parse(raw) as DogProfile);
+    } catch {
       router.replace("/onboard");
-      return;
     }
+  }, [router]);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    if (!dogProfile) return;
     fetchRecipes(dogProfile);
     return () => clearIntervalSafe();
-  }, [clearIntervalSafe, dogProfile, fetchRecipes, router]);
+  }, [clearIntervalSafe, dogProfile, fetchRecipes]);
 
   const dogName = data?.dog_name || dogProfile?.dog_name || "your pup";
 
@@ -482,9 +478,9 @@ export default function RecipesPage() {
                         {s.name}
                       </div>
                       <p className="mt-2 text-sm text-[#6A5445]">{s.reason}</p>
-                      <div className="mt-3 inline-flex rounded-full bg-[#C97D4E] px-4 py-2 text-sm font-semibold text-[#FAF7F2]">
-                        {s.daily_amount}
-                      </div>
+                      <p className="mt-2 text-sm text-[#2C2416]">
+                        <span className="font-semibold">How much:</span> {s.daily_amount}
+                      </p>
                     </div>
                   ))}
                 </div>
