@@ -1,21 +1,17 @@
 type LogoProps = {
-  compact?: boolean;
+  height?: number;
+  className?: string;
 };
 
-export function Logo({ compact = false }: LogoProps) {
+export function Logo({ height = 36, className }: LogoProps) {
   return (
-    <div className="inline-flex items-center gap-2">
-      <span
-        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-xs font-semibold text-[var(--color-cream)]"
-        aria-hidden
-      >
-        R
-      </span>
-      {!compact && (
-        <span className="font-heading text-2xl leading-none tracking-tight text-[var(--color-ink)]">
-          Recipup
-        </span>
-      )}
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/logo.png"
+      alt="Recipup"
+      height={height}
+      className={className}
+      style={{ height: `${height}px`, width: "auto" }}
+    />
   );
 }
