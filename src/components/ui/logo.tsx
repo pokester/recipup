@@ -7,7 +7,7 @@ export function Logo({ height = 36, className }: LogoProps) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/logo.png"
+      src="/logo-v2.png"
       alt="Recipup"
       height={height}
       className={className}

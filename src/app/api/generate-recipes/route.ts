@@ -77,7 +77,7 @@ Return this exact structure:
         "carbs_g": number,
         "notes": "string"
       },
-      "safety_score": number,
+      "safety_score": number (0-100 scale, where 100 = perfectly safe for dogs),
       "safety_notes": "string",
       "breed_notes": "string (optional — only if breed-specific rules were applied)"
     }
@@ -99,15 +99,25 @@ Return this exact structure:
       "content-type": "application/json",
       "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
+      "anthropic-beta": "prompt-caching-2024-07-31",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2500,
-      system: systemPrompt,
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 4096,
       messages: [
         {
           role: "user",
-          content: [{ type: "text", text: userPrompt }],
+          content: [
+            {
+              type: "text",
+              text: systemPrompt,
+              cache_control: { type: "ephemeral" },
+            },
+            {
+              type: "text",
+              text: userPrompt,
+            },
+          ],
         },
       ],
       temperature: 0.4,
