@@ -58,7 +58,6 @@ export default function PantryPage() {
   const [customSupplements, setCustomSupplements] = useState<IngredientRow[]>([]);
   const [openSections, setOpenSections] = useState({ ingredients: true, supplements: false, equipment: false });
 
-  // Auth check + initial data load
   useEffect(() => {
     const init = async () => {
       const supabase = createClient();
@@ -71,7 +70,6 @@ export default function PantryPage() {
       const defaultIngNames = new Set(DEFAULT_INGREDIENTS.map((i) => i.name));
       const defaultSupNames = new Set(DEFAULT_SUPPLEMENTS.map((i) => i.name));
 
-      // Merge DB ingredients with defaults
       const ingMap = new Map(pantry.ingredients.map((i) => [i.name, i]));
       setIngredientRows(
         DEFAULT_INGREDIENTS.map((d) => {
@@ -96,7 +94,6 @@ export default function PantryPage() {
         }));
       setCustomIngredients(customIng);
 
-      // Merge DB supplements with defaults
       const supMap = new Map(pantry.supplements.map((i) => [i.name, i]));
       setSupplementRows(
         DEFAULT_SUPPLEMENTS.map((d) => {
@@ -121,7 +118,6 @@ export default function PantryPage() {
         }));
       setCustomSupplements(customSup);
 
-      // Merge DB equipment with defaults
       const eqMap = new Map(pantry.equipment.map((e) => [e.name, e]));
       setEquipmentRows(
         DEFAULT_EQUIPMENT.map((d) => {
@@ -136,7 +132,6 @@ export default function PantryPage() {
     void init();
   }, [router]);
 
-  // Auto-save (debounced 1s)
   const triggerSave = useCallback(async (uid: string, rows: {
     ing: IngredientRow[];
     sup: IngredientRow[];
@@ -210,7 +205,6 @@ export default function PantryPage() {
     }, 1000);
   }, [userId, triggerSave]);
 
-  // Schedule auto-save whenever any row changes (skip initial load)
   useEffect(() => {
     if (!loaded) return;
     scheduleAutoSave(ingredientRows, supplementRows, equipmentRows, customIngredients, customSupplements);
@@ -246,48 +240,48 @@ export default function PantryPage() {
   if (!loaded) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-sm text-[var(--color-ink-soft)]">Loading your kitchen...</p>
+        <p className="text-sm text-[var(--color-ink-500)]">Loading your kitchen...</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-10 md:px-10 md:py-14">
-      <div className="mb-8 flex items-start justify-between gap-4">
+    <div className="mx-auto max-w-3xl px-6">
+      {/* Page header */}
+      <div className="flex items-start justify-between pt-12 pb-8">
         <div>
-          <h1 className="font-heading text-4xl text-[var(--color-ink)]">Your kitchen</h1>
-          <p className="mt-2 text-[var(--color-ink-soft)]">
-            Keep this up to date and every recipe we build will use what you already have — so your shopping list only shows what you actually need.
+          <h1 className="font-heading text-3xl text-[var(--color-ink)]">Your kitchen</h1>
+          <p className="mt-2 max-w-md text-sm text-[var(--color-ink-500)]">
+            Keep this up to date and every recipe we build will use what you already have.
           </p>
           {lastSaved && (
-            <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
-              Last saved {timeAgo(lastSaved)}
-            </p>
+            <p className="mt-1 text-xs text-[var(--color-ink-300)]">Last saved {timeAgo(lastSaved)}</p>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-3">
           {saveState === "saving" && (
-            <span className="text-sm text-[var(--color-ink-soft)]">Saving...</span>
+            <span className="text-xs text-[var(--color-ink-300)]">Saving...</span>
           )}
           {saveState === "saved" && (
-            <span className="text-sm font-semibold text-green-700">Saved ✓</span>
+            <span className="text-xs font-semibold text-[var(--color-forest)]">Saved ✓</span>
           )}
           <Link
             href="/dashboard"
-            className="rounded-full border border-[var(--color-border-strong)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)]"
+            className="rounded-full border border-[var(--color-ink-300)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)]"
           >
             Dashboard
           </Link>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 pb-16">
         <CollapsibleSection
           title="Ingredients you have 🥩"
+          count={ingredientRows.filter((r) => r.isAvailable).length + customIngredients.filter((r) => r.isAvailable).length}
           open={openSections.ingredients}
           onToggle={() => toggleSection("ingredients")}
         >
-          <div className="space-y-3">
+          <div>
             {ingredientRows.map((row, i) => (
               <IngredientRowUI
                 key={row.name}
@@ -306,7 +300,7 @@ export default function PantryPage() {
             <button
               type="button"
               onClick={addCustomIngredient}
-              className="mt-1 text-sm text-[var(--color-accent)] hover:underline"
+              className="border-t border-[var(--color-sand-deep)] px-0 py-4 text-sm font-medium text-[var(--color-coral)] w-full text-left"
             >
               + Add ingredient
             </button>
@@ -315,10 +309,11 @@ export default function PantryPage() {
 
         <CollapsibleSection
           title="Supplements 💊"
+          count={supplementRows.filter((r) => r.isAvailable).length + customSupplements.filter((r) => r.isAvailable).length}
           open={openSections.supplements}
           onToggle={() => toggleSection("supplements")}
         >
-          <div className="space-y-3">
+          <div>
             {supplementRows.map((row, i) => (
               <IngredientRowUI
                 key={row.name}
@@ -337,7 +332,7 @@ export default function PantryPage() {
             <button
               type="button"
               onClick={addCustomSupplement}
-              className="mt-1 text-sm text-[var(--color-accent)] hover:underline"
+              className="border-t border-[var(--color-sand-deep)] py-4 text-sm font-medium text-[var(--color-coral)] w-full text-left"
             >
               + Add supplement
             </button>
@@ -346,10 +341,11 @@ export default function PantryPage() {
 
         <CollapsibleSection
           title="Kitchen equipment 🍲"
+          count={equipmentRows.filter((r) => r.isAvailable).length}
           open={openSections.equipment}
           onToggle={() => toggleSection("equipment")}
         >
-          <div className="space-y-3">
+          <div>
             {equipmentRows.map((row, i) => (
               <EquipmentRowUI
                 key={row.name}
@@ -360,31 +356,28 @@ export default function PantryPage() {
           </div>
         </CollapsibleSection>
       </div>
-
-      <div className="mt-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] px-5 py-4">
-        <p className="text-sm text-[var(--color-ink-soft)]">
-          Missing equipment is never shown as a required purchase — only suggested if a recipe would genuinely benefit from it.
-        </p>
-      </div>
     </div>
   );
 }
 
 function CollapsibleSection({
-  title, open, onToggle, children,
-}: { title: string; open: boolean; onToggle: () => void; children: ReactNode }) {
+  title, count, open, onToggle, children,
+}: { title: string; count: number; open: boolean; onToggle: () => void; children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-cream)]">
+    <div className="overflow-hidden rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)]">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between px-5 py-4 text-left"
+        className="flex w-full cursor-pointer items-center justify-between px-6 py-5 text-left transition-colors hover:bg-[var(--color-sand)]"
       >
         <span className="font-semibold text-[var(--color-ink)]">{title}</span>
-        <span className="text-xs text-[var(--color-ink-soft)]">{open ? "▲" : "▼"}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-[var(--color-ink-500)]">{count} stocked</span>
+          <span className="text-xs text-[var(--color-ink-300)]">{open ? "▲" : "▼"}</span>
+        </div>
       </button>
       {open && (
-        <div className="border-t border-[var(--color-border)] px-5 pb-5 pt-4">
+        <div className="border-t border-[var(--color-sand-deep)]">
           {children}
         </div>
       )}
@@ -396,17 +389,17 @@ function IngredientRowUI({
   row, isCustom = false, onUpdate,
 }: { row: IngredientRow; isCustom?: boolean; onUpdate: (updated: IngredientRow) => void }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-3 border-b border-[var(--color-sand-deep)] px-6 py-4 last:border-0">
       {isCustom ? (
         <input
           type="text"
           value={row.name}
           placeholder="Ingredient name"
           onChange={(e) => onUpdate({ ...row, name: e.target.value })}
-          className="h-8 w-36 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-cream-soft)] px-2 text-sm outline-none focus:border-[var(--color-accent)]"
+          className="h-8 w-36 rounded-lg border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-3 text-sm outline-none focus:border-[var(--color-coral)]"
         />
       ) : (
-        <span className="w-36 flex-shrink-0 text-sm capitalize text-[var(--color-ink)]">{row.name}</span>
+        <span className="w-40 flex-shrink-0 text-sm capitalize text-[var(--color-ink)]">{row.name}</span>
       )}
 
       {row.isAvailable && (
@@ -417,33 +410,41 @@ function IngredientRowUI({
             value={row.quantity}
             onChange={(e) => onUpdate({ ...row, quantity: e.target.value })}
             placeholder="qty"
-            className="h-8 w-20 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-cream-soft)] px-2 text-sm outline-none focus:border-[var(--color-accent)]"
+            className="h-8 w-20 rounded-lg border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-3 text-sm outline-none focus:border-[var(--color-coral)]"
           />
-          <span className="text-xs text-[var(--color-ink-soft)]">{row.unit}</span>
-          <label className="flex items-center gap-1.5 text-xs text-[var(--color-ink-soft)]">
+          <span className="text-xs text-[var(--color-ink-500)]">{row.unit}</span>
+          <label className="flex items-center gap-1.5 text-xs text-[var(--color-ink-500)]">
             <input
               type="checkbox"
               checked={row.isRunningLow}
               onChange={(e) => onUpdate({ ...row, isRunningLow: e.target.checked })}
-              className="accent-[var(--color-accent)]"
+              className="accent-[var(--color-coral)]"
             />
             Running low
           </label>
         </>
       )}
 
-      <div className="ml-auto inline-flex rounded-full border border-[var(--color-border-strong)] bg-[var(--color-cream-soft)] p-0.5 text-xs">
+      <div className="ml-auto inline-flex rounded-full bg-[var(--color-sand)] p-0.5 text-xs">
         <button
           type="button"
           onClick={() => onUpdate({ ...row, isAvailable: true })}
-          className={`rounded-full px-3 py-1 transition-colors ${row.isAvailable ? "bg-[var(--color-accent)] text-[var(--color-cream)]" : "text-[var(--color-ink-soft)]"}`}
+          className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+            row.isAvailable
+              ? "bg-[var(--color-forest-light)]/10 text-[var(--color-forest)]"
+              : "text-[var(--color-ink-300)]"
+          }`}
         >
           Have it
         </button>
         <button
           type="button"
           onClick={() => onUpdate({ ...row, isAvailable: false })}
-          className={`rounded-full px-3 py-1 transition-colors ${!row.isAvailable ? "bg-[var(--color-border-strong)] text-[var(--color-ink)]" : "text-[var(--color-ink-soft)]"}`}
+          className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+            !row.isAvailable
+              ? "bg-[var(--color-warm-white)] shadow-sm text-[var(--color-ink)]"
+              : "text-[var(--color-ink-300)]"
+          }`}
         >
           Don&apos;t have
         </button>
@@ -457,28 +458,36 @@ function EquipmentRowUI({
 }: { row: EquipmentRow; onUpdate: (updated: EquipmentRow) => void }) {
   const affectsRecipes = RECIPE_AFFECTING_EQUIPMENT.includes(row.name);
   return (
-    <div>
+    <div className="border-b border-[var(--color-sand-deep)] px-6 py-4 last:border-0">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm capitalize text-[var(--color-ink)]">{row.name}</span>
-        <div className="inline-flex rounded-full border border-[var(--color-border-strong)] bg-[var(--color-cream-soft)] p-0.5 text-xs">
+        <div className="inline-flex rounded-full bg-[var(--color-sand)] p-0.5 text-xs">
           <button
             type="button"
             onClick={() => onUpdate({ ...row, isAvailable: true })}
-            className={`rounded-full px-3 py-1 transition-colors ${row.isAvailable ? "bg-[var(--color-accent)] text-[var(--color-cream)]" : "text-[var(--color-ink-soft)]"}`}
+            className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+              row.isAvailable
+                ? "bg-[var(--color-forest-light)]/10 text-[var(--color-forest)]"
+                : "text-[var(--color-ink-300)]"
+            }`}
           >
             Have it
           </button>
           <button
             type="button"
             onClick={() => onUpdate({ ...row, isAvailable: false })}
-            className={`rounded-full px-3 py-1 transition-colors ${!row.isAvailable ? "bg-[var(--color-border-strong)] text-[var(--color-ink)]" : "text-[var(--color-ink-soft)]"}`}
+            className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+              !row.isAvailable
+                ? "bg-[var(--color-warm-white)] shadow-sm text-[var(--color-ink)]"
+                : "text-[var(--color-ink-300)]"
+            }`}
           >
             Don&apos;t have
           </button>
         </div>
       </div>
       {!row.isAvailable && affectsRecipes && (
-        <p className="mt-1 text-xs italic text-[var(--color-accent)]">
+        <p className="mt-1 text-xs italic text-[var(--color-coral)]">
           We&apos;ll only suggest recipes you can actually make with your current equipment.
         </p>
       )}

@@ -1,211 +1,282 @@
-"use client";
-
-import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { Logo } from "@/components/ui/logo";
+import { WaitlistForm } from "@/components/home/WaitlistForm";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
-  const [email, setEmail] = useState("");
-  const [submissions, setSubmissions] = useState<string[]>([]);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+export const dynamic = "force-dynamic";
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) return;
+function toTitleCase(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+}
 
-    setSubmissions((current) => [...current, trimmedEmail]);
-    setEmail("");
-    setIsSubmitted(true);
-  };
+export default async function Home() {
+  let user = null;
+  let firstName = "";
+  let firstDogName = "";
 
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col px-6 pb-12 md:px-10 md:pb-16">
-      <section className="flex flex-col gap-8 pt-16 pb-10 md:pt-24 md:pb-12">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
-          REAL FOOD. COOKED BY YOU.
-        </p>
-        <div className="max-w-3xl">
-          <h1 className="font-heading text-5xl leading-tight text-[var(--color-ink)] md:text-7xl">
-            Home-cooked food for your dog — built around them, made by you.
-          </h1>
-        </div>
-        <p className="max-w-2xl text-lg text-[var(--color-ink-soft)] md:text-2xl">
-          Recipup builds personalised recipe plans for your dog — from puppy to senior — based on who they are and how you cook. You know exactly what&apos;s in every bowl.
-        </p>
-        <div className="flex flex-wrap gap-4 pt-3">
-          <Link
-            href="/onboard"
-            className="rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
-          >
-            Build my dog&apos;s recipe plan →
-          </Link>
-          <a href="#how-it-works" className="rounded-full border border-[var(--color-border-strong)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-cream-soft)]">
-            See how it works
-          </a>
-        </div>
-      </section>
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
 
-      <section id="how-it-works" className="border-t border-[var(--color-border)] pt-10 pb-16 md:pt-12">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-          How it works
-        </p>
-        <h2 className="mt-3 font-heading text-3xl text-[var(--color-ink)]">Simple for you. Transformative for them.</h2>
-        <div className="mt-8 grid gap-8 md:grid-cols-3">
-          <article className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-              Step 1
-            </p>
-            <h3 className="font-heading text-3xl text-[var(--color-ink)]">
-              Tell us about your dog
-            </h3>
-            <p className="text-[var(--color-ink-soft)]">
-              Breed, age, weight, health conditions, what you cook with — share the full picture and we do the nutritional thinking for you.
-            </p>
-          </article>
-          <article className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-              Step 2
-            </p>
-            <h3 className="font-heading text-3xl text-[var(--color-ink)]">
-              We build their recipe plan
-            </h3>
-            <p className="text-[var(--color-ink-soft)]">
-              Recipup works out their daily calorie needs, balances the nutrients, and builds recipes around your cooking style and what&apos;s already in your kitchen.
-            </p>
-          </article>
-          <article className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-              Step 3
-            </p>
-            <h3 className="font-heading text-3xl text-[var(--color-ink)]">
-              Cook, track, and improve
-            </h3>
-            <p className="text-[var(--color-ink-soft)]">
-              Get clear, cookbook-style recipes with a shopping list ready to go. Save what works, refine over time, and watch your dog thrive.
-            </p>
-          </article>
-        </div>
-      </section>
+    if (user) {
+      const [{ data: profile }, { data: dogs }] = await Promise.all([
+        supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+        supabase.from("dogs").select("name").eq("user_id", user.id).eq("is_active", true).order("created_at", { ascending: false }).limit(1),
+      ]);
+      const rawName = (profile as { full_name: string | null } | null)?.full_name;
+      firstName = rawName ? rawName.split(" ")[0] : (user.email?.split("@")[0] ?? "");
+      firstDogName = toTitleCase((dogs as { name: string }[] | null)?.[0]?.name ?? "");
+    }
+  }
 
-      <section className="border-t border-[var(--color-border)] py-16">
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
-            <p className="font-heading text-2xl text-[var(--color-ink)]">You know exactly what&apos;s in it</p>
-            <p className="mt-3 text-[var(--color-ink-soft)]">Every ingredient, every gram — listed clearly. No mystery meals, no vague "natural flavourings." Just real food you chose.</p>
+  /* ── Logged-in experience (unchanged) ─────────────────────────── */
+  if (user) {
+    return (
+      <div className="mx-auto flex w-full max-w-6xl flex-col px-6 pb-16 md:px-10">
+        <section className="flex flex-col gap-6 pt-16 pb-10 md:pt-24 md:pb-12">
+          <p className="eyebrow">Welcome back{firstName ? `, ${firstName}` : ""}</p>
+          <div className="max-w-2xl">
+            <h1 className="font-heading text-5xl leading-tight text-[var(--color-ink)] md:text-6xl">
+              {firstDogName
+                ? `What are you cooking for ${firstDogName} this week?`
+                : "What are you cooking this week?"}
+            </h1>
           </div>
-          <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
-            <p className="font-heading text-2xl text-[var(--color-ink)]">We do the hard thinking</p>
-            <p className="mt-3 text-[var(--color-ink-soft)]">Calorie targets, protein ratios, breed-specific adjustments, safe ingredient checks — all handled. You just cook the recipe.</p>
-          </div>
-          <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
-            <p className="font-heading text-2xl text-[var(--color-ink)]">Track the difference over time</p>
-            <p className="mt-3 text-[var(--color-ink-soft)]">Save every recipe, plan your week, and see exactly what you&apos;re spending — then compare it to what delivery services cost for the same quality.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-[var(--color-border)] py-16">
-        <div className="rounded-3xl border border-[var(--color-border-strong)] bg-[var(--color-cream-soft)] px-6 py-8 md:px-10">
-          <h2 className="font-heading text-4xl text-[var(--color-ink)] md:text-5xl">
-            Be part of the founding pack.
-          </h2>
-          <p className="mt-4 max-w-2xl text-lg text-[var(--color-ink-soft)]">
-            Join the first 500 dog owners and lock in founding member pricing for life. No card required to join — just your email.
+          <p className="max-w-xl text-lg text-[var(--color-ink-soft)]">
+            Build a new recipe plan, browse your library, or check in on your kitchen.
           </p>
-          <form
-            onSubmit={handleSubmit}
-            className="mt-6 flex flex-col gap-3 md:flex-row"
-          >
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="your@email.com"
-              className="h-12 flex-1 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-5 text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-soft)] focus:border-[var(--color-accent)]"
-            />
-            <button
-              type="submit"
-              className="h-12 rounded-full bg-[var(--color-accent)] px-7 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+          <div className="flex flex-wrap gap-4 pt-2">
+            <Link
+              href="/onboard"
+              className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
             >
-              Reserve my spot →
-            </button>
-          </form>
-          {isSubmitted && submissions.length > 0 && (
-            <p className="mt-4 text-sm text-[var(--color-ink-soft)]">
-              You&apos;re on the list — we&apos;ll be in touch before we launch. Thank you.
-            </p>
-          )}
-          <p className="mt-3 text-xs text-[var(--color-ink-soft)]">No spam. Just one email when we&apos;re ready for you.</p>
-        </div>
-      </section>
+              Build a recipe plan →
+            </Link>
+            <Link
+              href="/dashboard"
+              className="rounded-full border border-[var(--color-border-strong)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-sand)]"
+            >
+              Go to dashboard
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
-      <section className="border-t border-[var(--color-border)] py-12">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          {[
-            "Breed-specific nutrition",
-            "Pantry-aware recipes",
-            "Shopping list included",
-            "Safety score on every recipe",
-            "Works for all life stages",
-            "Vet-flag alerts built in",
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-2 text-sm text-[var(--color-ink-soft)]">
-              <span className="text-[var(--color-accent)]">✓</span>
-              {item}
+  /* ── Logged-out marketing pages ────────────────────────────────── */
+  return (
+    <div>
+      {/* ── SECTION 1: HERO ── */}
+      <section className="bg-[var(--color-warm-white)] py-12 md:py-20">
+        <div className="mx-auto max-w-6xl px-6 md:px-10">
+          <div className="grid items-center gap-10 md:grid-cols-2 md:gap-16">
+            {/* Left: content */}
+            <div className="flex flex-col gap-6">
+              <p className="eyebrow">Real food. Cooked by you.</p>
+              <h1 className="font-heading text-3xl font-semibold leading-tight text-[var(--color-ink)] md:text-5xl">
+                The freshest food your dog will ever eat — made in your kitchen.
+              </h1>
+              <p className="text-lg leading-relaxed text-[var(--color-ink-soft)]">
+                Recipup builds personalised recipes for your dog based on exactly who they are. You cook with ingredients you chose. We handle the nutrition science.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/onboard"
+                  className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-center text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+                >
+                  Build my dog&apos;s recipe plan →
+                </Link>
+                <a
+                  href="#how-it-works"
+                  className="rounded-full border border-[var(--color-border-strong)] px-6 py-3 text-center text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-sand)]"
+                >
+                  See how it works
+                </a>
+              </div>
             </div>
-          ))}
+
+            {/* Right: image placeholder */}
+            <div className="aspect-[4/3] w-full rounded-2xl bg-[var(--color-sand-deep)] flex flex-col items-center justify-center gap-2 text-[var(--color-ink-300)]">
+              <span className="text-4xl">📷</span>
+              <span className="text-sm">Dog beside kitchen counter, natural light</span>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="border-t border-[var(--color-border)] py-16">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-          Fresh food. A fraction of the price.
-        </p>
-        <h2 className="mt-4 font-heading text-4xl text-[var(--color-ink)] md:text-5xl">
-          Real ingredients. No delivery markup.
-        </h2>
-        <p className="mt-4 max-w-xl text-lg text-[var(--color-ink-soft)]">
-          Fresh food delivery services are convenient — but you pay a significant premium for that convenience. Home cooking with Recipup gives your dog the same quality ingredients, cooked by you.
-        </p>
-
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
-            <p className="text-sm font-semibold text-[var(--color-ink-soft)]">Fresh food delivery (premium)</p>
-            <p className="mt-2 font-heading text-3xl text-[var(--color-ink)]">~£96/month</p>
-            <p className="mt-1 text-sm text-[var(--color-ink-soft)]">for a 28kg dog</p>
-          </div>
-
-          <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
-            <p className="text-sm font-semibold text-[var(--color-ink-soft)]">Fresh food delivery (standard)</p>
-            <p className="mt-2 font-heading text-3xl text-[var(--color-ink)]">~£60/month</p>
-            <p className="mt-1 text-sm text-[var(--color-ink-soft)]">for a 28kg dog</p>
-          </div>
-
-          <div className="rounded-3xl border-2 border-[var(--color-accent)] bg-[var(--color-accent)] p-6 text-[var(--color-cream)]">
-            <p className="text-sm font-semibold text-[var(--color-cream)]/80">🐾 Recipup home cooking</p>
-            <p className="mt-2 font-heading text-3xl">~£32–45/month</p>
-            <p className="mt-1 text-sm text-[var(--color-cream)]/90">Same fresh ingredients. You do the cooking — we handle the rest.</p>
+      {/* ── SECTION 2: TRUST STRIP ── */}
+      <section className="bg-[var(--color-forest)] py-4">
+        <div className="mx-auto max-w-6xl px-6 md:px-10">
+          <div className="grid grid-cols-2 gap-2 text-center text-sm font-medium text-[var(--color-warm-white)] md:flex md:items-center md:justify-center md:gap-8">
+            {[
+              "Recipes to FEDIAF + AAFCO standards",
+              "Breed-specific for 40+ breeds",
+              "Puppies, adults & seniors",
+              "Health conditions supported",
+            ].map((item) => (
+              <span key={item}>{item}</span>
+            ))}
           </div>
         </div>
-
-        <p className="mt-4 text-xs text-[var(--color-ink-soft)]">
-          Competitor estimates are based on publicly listed pricing for a 28kg dog. Actual costs vary by weight, breed, and recipe.
-        </p>
-        <p className="mt-6 max-w-xl text-[var(--color-ink-soft)]">
-          More dog owners are making the switch from expensive delivery to home cooking — without the guesswork. Recipup handles the nutritional thinking so you can focus on the cooking.
-        </p>
       </section>
 
-      <footer className="border-t border-[var(--color-border)] py-10">
-        <div className="flex flex-col items-start gap-3">
-          <Logo height={36} />
-          <p className="text-sm text-[var(--color-ink-soft)]">
-            Real recipes. Happy dogs.
+      {/* ── SECTION 3: HOW IT WORKS ── */}
+      <section id="how-it-works" className="bg-[var(--color-warm-white)] py-12 md:py-20">
+        <div className="mx-auto max-w-6xl px-6 md:px-10">
+          <div className="text-center">
+            <p className="eyebrow">How it works</p>
+            <h2 className="mt-3 font-heading text-3xl text-[var(--color-ink)]">
+              Simple for you.<br />Transformative for them.
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-10 md:grid-cols-3">
+            {[
+              {
+                placeholder: "Hands typing on phone",
+                bg: "bg-[var(--color-sand)]",
+                step: "Step 1",
+                title: "Tell us about your dog",
+                body: "Breed, age, weight, health conditions — the more we know, the better the recipes. Takes about two minutes.",
+              },
+              {
+                placeholder: "Ingredient layout overhead",
+                bg: "bg-[var(--color-sand-deep)]",
+                step: "Step 2",
+                title: "We do the hard thinking",
+                body: "Breed nutrition, calorie calculations, health condition rules, FEDIAF standards — all handled. You don't need a veterinary nutritionist.",
+              },
+              {
+                placeholder: "Bowl of fresh food, textured and warm",
+                bg: "bg-[var(--color-forest-light)]/20",
+                step: "Step 3",
+                title: "You cook it. They love it.",
+                body: "One-pot recipes, exact gram amounts, batch cooking built in. One cook session feeds them for days.",
+              },
+            ].map(({ placeholder, bg, step, title, body }) => (
+              <article key={step} className="flex flex-col gap-4">
+                <div className={`aspect-square w-full rounded-2xl ${bg} flex flex-col items-center justify-center gap-1 text-[var(--color-ink-300)]`}>
+                  <span className="text-2xl">📷</span>
+                  <span className="text-xs">{placeholder}</span>
+                </div>
+                <p className="eyebrow">{step}</p>
+                <h3 className="font-heading text-2xl text-[var(--color-ink)]">{title}</h3>
+                <p className="text-[var(--color-ink-soft)]">{body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 4: THREE PILLARS ── */}
+      <section className="bg-[var(--color-forest)] py-12 md:py-20">
+        <div className="mx-auto max-w-6xl px-6 md:px-10">
+          <div className="text-center">
+            <p className="eyebrow" style={{ color: "var(--color-forest-light)" }}>Why Recipup</p>
+            <h2 className="mt-3 font-heading text-4xl text-[var(--color-warm-white)]">
+              What makes home cooking different.
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                title: "You know every ingredient",
+                body: "No factories. No mystery meat. No preservatives you can't pronounce. You chose what went in. You cooked it. That's something no delivery service can say.",
+              },
+              {
+                title: "We've done the research",
+                body: "Breed-specific nutrition, calorie targets, health condition rules, FEDIAF and AAFCO standards. We've built all of that in so you don't have to think about it.",
+              },
+              {
+                title: "Track the difference",
+                body: "Log your dog's weight, coat, and energy week by week. Know the recipes are working — don't just hope they are.",
+              },
+            ].map(({ title, body }) => (
+              <div key={title} className="rounded-2xl bg-[var(--color-forest-light)] p-8">
+                <h3 className="font-heading text-xl text-[var(--color-warm-white)]">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--color-warm-white)]/80">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 5: COST COMPARISON ── */}
+      <section className="bg-[var(--color-warm-white)] py-12 md:py-20">
+        <div className="mx-auto max-w-6xl px-6 md:px-10">
+          <div className="text-center">
+            <p className="eyebrow">The honest numbers</p>
+            <h2 className="mt-3 font-heading text-3xl text-[var(--color-ink)]">
+              Same fresh ingredients.<br />A fraction of the price.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base text-[var(--color-ink-soft)]">
+              Fresh food delivery services are convenient — but you&apos;re paying for packaging, cold chains, and logistics. Home cooking gives your dog the same ingredients for a fraction of the cost.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-sand)] p-6">
+              <p className="text-sm font-semibold text-[var(--color-ink-soft)]">Fresh food delivery (premium)</p>
+              <p className="mt-2 font-heading text-3xl text-[var(--color-ink)]">~£96/month</p>
+              <p className="mt-1 text-sm text-[var(--color-ink-soft)]">for a 28kg dog</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-sand)] p-6">
+              <p className="text-sm font-semibold text-[var(--color-ink-soft)]">Fresh food delivery (standard)</p>
+              <p className="mt-2 font-heading text-3xl text-[var(--color-ink)]">~£60/month</p>
+              <p className="mt-1 text-sm text-[var(--color-ink-soft)]">for a 28kg dog</p>
+            </div>
+            <div className="rounded-2xl bg-[var(--color-coral)] p-6">
+              <p className="text-sm font-semibold text-[var(--color-warm-white)]/80">🐾 Recipup home cooking</p>
+              <p className="mt-2 font-heading text-3xl text-[var(--color-warm-white)]">~£32–45/month</p>
+              <p className="mt-1 text-sm text-[var(--color-warm-white)]/90">Same ingredients. You do the (easy) cooking.</p>
+            </div>
+          </div>
+          <p className="mt-4 text-center text-xs text-[var(--color-ink-300)]">
+            Estimates based on publicly listed pricing for a 28kg dog. Actual costs vary by dog size, breed, and ingredients chosen.
           </p>
         </div>
-      </footer>
+      </section>
+
+      {/* ── SECTION 6: WAITLIST ── */}
+      <section className="bg-[var(--color-sand)] py-12 md:py-20">
+        <div className="mx-auto max-w-2xl px-6 md:px-10">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8 text-center md:p-12">
+            <p className="eyebrow">Founding 500</p>
+            <h2 className="mt-3 font-heading text-3xl text-[var(--color-ink)]">Be part of something real.</h2>
+            <p className="mx-auto mt-4 max-w-md text-[var(--color-ink-soft)]">
+              We&apos;re opening to the first 500 members at a founding price locked in for life. Early access, direct input on what we build next, and the best price we&apos;ll ever offer.
+            </p>
+            <div className="mt-6">
+              <WaitlistForm />
+            </div>
+            <p className="mt-3 text-xs text-[var(--color-ink-300)]">
+              No spam. Just launch updates and your founder status.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 7: TRUST SIGNALS ── */}
+      <section className="bg-[var(--color-sand)] pb-12 md:pb-16">
+        <div className="mx-auto max-w-6xl px-6 md:px-10">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            {[
+              "FEDIAF + AAFCO compliant recipes",
+              "Breed intelligence for 40+ breeds",
+              "Works for all life stages",
+              "Health conditions handled",
+              "No mystery ingredients",
+              "Track progress over time",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2 text-sm text-[var(--color-ink-soft)]">
+                <span className="text-[var(--color-coral)]">✓</span>
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
+

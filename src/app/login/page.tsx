@@ -70,112 +70,146 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-md px-6 py-16 md:py-24">
-      <div className="mb-10 text-center">
-        <div className="mb-6 flex justify-center">
-          <Logo height={44} />
+    <div className="flex flex-col md:flex-row">
+      {/* ── LEFT BRAND PANEL ── */}
+      <div className="hidden md:flex md:w-5/12 lg:w-1/2 flex-col justify-between bg-[var(--color-forest)] p-12 py-16">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-white.png" alt="Recipup" height={40} style={{ height: "40px", width: "auto", filter: "brightness(0) invert(1)" }} />
+
+        <div>
+          <p className="font-heading text-6xl leading-none text-[var(--color-coral)]">&ldquo;</p>
+          <blockquote className="mt-2 font-heading text-2xl leading-snug text-[var(--color-warm-white)]">
+            I always knew what went into Rory&apos;s bowl. That changed everything.
+          </blockquote>
+          <p className="mt-4 text-sm text-[var(--color-warm-white)]/60">
+            — Sarah, Recipup member
+          </p>
         </div>
-        <h1 className="font-heading text-4xl text-[var(--color-ink)]">
-          Welcome back
-        </h1>
-        <p className="mt-2 text-[var(--color-ink-soft)]">
-          Sign in to see your dogs&apos; recipe plans
-        </p>
+
+        <ul className="space-y-3">
+          {[
+            "FEDIAF + AAFCO compliant recipes",
+            "Breed-specific for 40+ breeds",
+            "No card required to start",
+          ].map((item) => (
+            <li key={item} className="flex items-center gap-3 text-sm text-[var(--color-warm-white)]/80">
+              <span className="text-[var(--color-coral)]">✓</span>
+              {item}
+            </li>
+          ))}
+        </ul>
       </div>
 
-      <div className="space-y-3">
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={loading}
-          className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-[var(--color-accent)] px-6 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:bg-[var(--color-cream-soft)] disabled:opacity-50"
-        >
-          <GoogleIcon />
-          Continue with Google
-        </button>
-
-        <button
-          type="button"
-          onClick={handleApple}
-          disabled={loading}
-          className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-[var(--color-ink)] px-6 text-sm font-semibold text-[var(--color-cream)] transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
-          <AppleIcon />
-          Continue with Apple
-        </button>
-      </div>
-
-      <div className="my-6 flex items-center gap-4">
-        <div className="flex-1 border-t border-[var(--color-border)]" />
-        <span className="text-xs text-[var(--color-ink-soft)]">or sign in with email</span>
-        <div className="flex-1 border-t border-[var(--color-border)]" />
-      </div>
-
-      <form onSubmit={handleEmail} className="space-y-4">
-        {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            That email or password doesn&apos;t look right. Please try again.
+      {/* ── RIGHT FORM PANEL ── */}
+      <div className="flex w-full flex-col items-center justify-center bg-[var(--color-warm-white)] px-6 py-16 md:w-7/12 md:py-24 lg:w-1/2">
+        <div className="w-full max-w-md">
+          {/* Logo — mobile only */}
+          <div className="mb-8 flex justify-center md:hidden">
+            <Logo height={40} />
           </div>
-        )}
 
-        <label className="block space-y-1.5">
-          <span className="text-sm text-[var(--color-ink-soft)]">Email address</span>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
+          <div className="mb-10">
+            <h1 className="font-heading text-4xl text-[var(--color-ink)]">Welcome back</h1>
+            <p className="mt-2 text-[var(--color-ink-soft)]">
+              Sign in to see your dogs&apos; recipe plans
+            </p>
+          </div>
 
-        <label className="block space-y-1.5">
-          <span className="text-sm text-[var(--color-ink-soft)]">Password</span>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 pr-12 outline-none focus:border-[var(--color-accent)]"
-            />
+          <div className="space-y-3">
             <button
               type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]"
+              onClick={handleGoogle}
+              disabled={loading}
+              className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-[var(--color-coral)] px-6 text-sm font-semibold text-[var(--color-coral)] transition-colors hover:bg-[var(--color-sand)] disabled:opacity-50"
             >
-              {showPassword ? "Hide" : "Show"}
+              <GoogleIcon />
+              Continue with Google
+            </button>
+
+            <button
+              type="button"
+              onClick={handleApple}
+              disabled={loading}
+              className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-[var(--color-ink)] px-6 text-sm font-semibold text-[var(--color-warm-white)] transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              <AppleIcon />
+              Continue with Apple
             </button>
           </div>
-        </label>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="h-12 w-full rounded-full bg-[var(--color-accent)] text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-        >
-          {loading ? "Signing in…" : "Sign in"}
-        </button>
+          <div className="my-6 flex items-center gap-4">
+            <div className="flex-1 border-t border-[var(--color-border)]" />
+            <span className="text-xs text-[var(--color-ink-soft)]">or sign in with email</span>
+            <div className="flex-1 border-t border-[var(--color-border)]" />
+          </div>
 
-        <div className="text-center">
-          <Link
-            href="/reset-password"
-            className="text-sm text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]"
-          >
-            Forgot your password?
-          </Link>
+          <form onSubmit={handleEmail} className="space-y-4">
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                That email or password doesn&apos;t look right. Please try again.
+              </div>
+            )}
+
+            <label className="block space-y-1.5">
+              <span className="text-sm text-[var(--color-ink-soft)]">Email address</span>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]"
+              />
+            </label>
+
+            <label className="block space-y-1.5">
+              <span className="text-sm text-[var(--color-ink-soft)]">Password</span>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-warm-white)] px-4 pr-12 outline-none focus:border-[var(--color-coral)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--color-ink-soft)] hover:text-[var(--color-coral)]"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+            </label>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="h-12 w-full rounded-full bg-[var(--color-coral)] text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              {loading ? "Signing in…" : "Sign in"}
+            </button>
+
+            <div className="text-center">
+              <Link
+                href="/reset-password"
+                className="text-sm text-[var(--color-ink-soft)] hover:text-[var(--color-coral)]"
+              >
+                Forgot your password?
+              </Link>
+            </div>
+          </form>
+
+          <p className="mt-8 text-center text-sm text-[var(--color-ink-soft)]">
+            New here?{" "}
+            <Link
+              href="/signup"
+              className="font-semibold text-[var(--color-coral)] hover:underline"
+            >
+              Create a free account →
+            </Link>
+          </p>
         </div>
-      </form>
-
-      <p className="mt-8 text-center text-sm text-[var(--color-ink-soft)]">
-        New here?{" "}
-        <Link
-          href="/signup"
-          className="font-semibold text-[var(--color-accent)] hover:underline"
-        >
-          Create a free account →
-        </Link>
-      </p>
+      </div>
     </div>
   );
 }

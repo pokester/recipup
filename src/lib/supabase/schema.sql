@@ -399,3 +399,36 @@ CREATE INDEX IF NOT EXISTS health_logs_dog_id_idx
 
 CREATE INDEX IF NOT EXISTS health_logs_user_dog_idx
   ON public.health_logs(user_id, dog_id, week_start DESC);
+
+-- ============================================================
+-- RLS FOR COST TABLES
+-- Run this block in Supabase dashboard after updating schema
+-- Note: (false) for insert blocks direct client writes;
+-- the service role key bypasses RLS and can still write.
+-- ============================================================
+
+-- recipe_costs
+ALTER TABLE public.recipe_costs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role only writes costs"
+  ON public.recipe_costs FOR INSERT
+  WITH CHECK (false);
+
+CREATE POLICY "Anyone can read costs"
+  ON public.recipe_costs FOR SELECT
+  USING (true);
+
+-- price_sync_log
+ALTER TABLE public.price_sync_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role only writes sync log"
+  ON public.price_sync_log FOR INSERT
+  WITH CHECK (false);
+
+CREATE POLICY "Anyone can read sync log"
+  ON public.price_sync_log FOR SELECT
+  USING (true);
+
+-- ingredient_prices (read-only for all, write via service role)
+-- Note: ingredient_prices already has RLS enabled and a SELECT policy above.
+-- The INSERT/UPDATE policy is intentionally omitted here — service role bypasses RLS.

@@ -69,7 +69,7 @@ const CARDIAC_OPTIONS = [
 
 type FormState = {
   dogName: string; breed: string; age: string; weight: string;
-  weightUnit: "kg" | "lbs"; sex: "Male" | "Female" | "";
+  weightUnit: "kg" | "lbs"; sex: "male_intact" | "female_intact" | "male_neutered" | "female_spayed" | "";
   foodSpendMonthly: string;
   healthConditions: string[]; kidneyStage: string; diabetesInsulinDependent: string;
   vetConfirmedAllergens: string; overweightTargetWeightKg: string; heartMedication: string;
@@ -172,7 +172,7 @@ function OnboardPage() {
 
   // Auth / login state (resolved after mount)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [authChecked, setAuthChecked] = useState(!process.env.NEXT_PUBLIC_SUPABASE_URL);
   const [userId, setUserId] = useState<string | null>(null);
 
   // Step state
@@ -215,10 +215,7 @@ function OnboardPage() {
 
   // ─── Auth check + pantry pre-fill ──────────────────────────────────────────
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setAuthChecked(true);
-      return;
-    }
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -680,14 +677,22 @@ function OnboardPage() {
               </div>
               <div className="space-y-2">
                 <span className="text-sm text-[var(--color-ink-soft)]">Sex</span>
-                <div className="flex gap-2">
-                  {(["Male", "Female"] as const).map((sex) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { value: "male_intact", label: "Male (intact)" },
+                    { value: "female_intact", label: "Female (intact)" },
+                    { value: "male_neutered", label: "Male (neutered)" },
+                    { value: "female_spayed", label: "Female (spayed)" },
+                  ] as const).map(({ value, label }) => (
                     <button
-                      key={sex} type="button" onClick={() => updateForm("sex", sex)}
-                      className={`rounded-full border px-4 py-2 text-sm ${form.sex === sex ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]" : "border-[var(--color-border-strong)] text-[var(--color-ink-soft)]"}`}
-                    >{sex}</button>
+                      key={value} type="button" onClick={() => updateForm("sex", value)}
+                      className={`rounded-xl border px-4 py-2.5 text-sm transition-colors ${form.sex === value ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]" : "border-[var(--color-border-strong)] text-[var(--color-ink-soft)] hover:border-[var(--color-accent)]"}`}
+                    >
+                      {label}
+                    </button>
                   ))}
                 </div>
+                <p className="text-xs text-[var(--color-ink-soft)]">Neutered and spayed dogs need slightly fewer calories — we adjust the recipes automatically.</p>
               </div>
             </div>
           </div>
@@ -866,7 +871,7 @@ function OnboardPage() {
                 <SummaryRow label="Breed" value={form.breed} />
                 <SummaryRow label="Age" value={`${form.age} years`} />
                 <SummaryRow label="Weight" value={`${form.weight} ${form.weightUnit}`} />
-                <SummaryRow label="Sex" value={form.sex} />
+                <SummaryRow label="Sex" value={{ male_intact: "Male", female_intact: "Female", male_neutered: "Neutered male", female_spayed: "Spayed female", "": "" }[form.sex]} />
                 <SummaryRow label="Health conditions" value={form.healthConditions.join(", ")} />
                 <SummaryRow label="Activity level" value={ACTIVITY_LEVELS.find((l) => l.id === form.activityLevel)?.title ?? ""} />
                 <SummaryRow label="Diet type" value={form.dietType} />

@@ -1,21 +1,22 @@
 import Link from "next/link";
+import { FaqAccordion } from "@/components/pricing/FaqAccordion";
 
 const FREE_FEATURES = [
-  "Up to 3 recipe generations per month",
-  "Full recipe instructions and ingredient lists",
+  "Up to 3 recipe generations/month",
+  "Full recipe instructions",
   "Shopping list per recipe",
-  "Save recipes to your library",
-  "Pantry and equipment tracking",
+  "Save up to 5 recipes",
+  "Pantry tracking",
 ];
 
 const PACK_FEATURES = [
   "Unlimited recipe generations",
-  "Meal planner — plan your dog's week",
+  "Meal planner",
   "Weekly shopping list",
   "Cost per day for every recipe",
-  "Compare costs to fresh food delivery services",
+  "Compare costs to delivery services",
   "Cost tracking over time",
-  "All Free features included",
+  "All Free features",
 ];
 
 const PACK_PRO_FEATURES = [
@@ -23,149 +24,182 @@ const PACK_PRO_FEATURES = [
   "Up to 6 dogs",
   "Health history dashboard",
   "Weekly nutrition graphs",
-  "Smart correction suggestions",
+  "Smart recipe corrections",
   "Drift notifications",
 ];
 
 const FOUNDING_FEATURES = [
-  "Everything in Pack",
-  "Locked-in founding member pricing — forever",
+  "Everything in Pack Pro",
+  "Founding member pricing — forever",
   "Early access to every new feature",
   "Direct input on what we build next",
 ];
 
 export default function PricingPage() {
   return (
-    <div className="mx-auto max-w-6xl px-6 py-16 md:px-8">
-      <div className="text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
-          Pricing
-        </p>
-        <h1 className="mt-4 font-heading text-5xl leading-tight text-[var(--color-ink)]">
-          Start free. Upgrade when you&apos;re ready.
-        </h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-[var(--color-ink-soft)]">
-          Every account starts with a 14-day free trial of Pack. No card required. Downgrade, upgrade, or cancel any time.
-        </p>
-      </div>
-
-      <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Free */}
-        <div className="flex flex-col rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-7">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-ink-soft)]">Free</p>
-            <p className="mt-3 font-heading text-4xl text-[var(--color-ink)]">£0</p>
-            <p className="text-sm text-[var(--color-ink-soft)]">per month</p>
-            <p className="mt-4 text-sm text-[var(--color-ink-soft)]">Everything you need to try home cooking for your dog.</p>
+    <div>
+      {/* ── HERO ── */}
+      <section className="bg-[var(--color-sand)] py-12 text-center md:py-16">
+        <div className="mx-auto max-w-3xl px-6">
+          <p className="eyebrow">Pricing</p>
+          <h1 className="mt-4 font-heading text-4xl leading-tight text-[var(--color-ink)]">
+            Start free. Upgrade when you&apos;re ready.
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-[var(--color-ink-soft)]">
+            Every account starts with a 14-day free trial of Pack Pro. No card required. Cancel any time.
+          </p>
+          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm text-[var(--color-ink)]">
+              🎁 14-day free trial — full Pack Pro access from the moment you sign up.
+            </p>
           </div>
-          <ul className="mt-6 flex-1 space-y-3">
-            {FREE_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-[var(--color-ink-soft)]">
-                <span className="mt-0.5 text-[var(--color-accent)]">✓</span>
-                {f}
-              </li>
-            ))}
-          </ul>
-          <Link href="/signup" className="mt-8 block rounded-full border border-[var(--color-border-strong)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-cream)]">
-            Get started free →
+        </div>
+      </section>
+
+      {/* ── TIER CARDS ── */}
+      <section className="bg-[var(--color-warm-white)] py-12 md:py-16">
+        <div className="mx-auto max-w-6xl px-6 md:px-10">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Free */}
+            <div className="flex flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8">
+              <p className="eyebrow">Free</p>
+              <p className="mt-4 font-heading text-4xl text-[var(--color-ink)]">£0</p>
+              <p className="text-sm text-[var(--color-ink-soft)]">per month</p>
+              <p className="mt-4 text-sm text-[var(--color-ink-soft)]">
+                Everything you need to try home cooking for your dog.
+              </p>
+              <ul className="mt-6 flex-1 space-y-3">
+                {FREE_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-[var(--color-ink-soft)]">
+                    <span className="mt-0.5 shrink-0 text-[var(--color-coral)]">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/signup"
+                className="mt-8 block rounded-full border border-[var(--color-border-strong)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-sand)]"
+              >
+                Get started free →
+              </Link>
+            </div>
+
+            {/* Pack — highlighted */}
+            <div className="flex flex-col rounded-2xl bg-[var(--color-coral)] p-8">
+              <div className="mb-3 self-start rounded-full bg-[var(--color-warm-white)] px-3 py-1 text-xs font-semibold text-[var(--color-coral)]">
+                MOST POPULAR
+              </div>
+              <p className="eyebrow text-[var(--color-warm-white)]/70">Pack</p>
+              <p className="mt-4 font-heading text-4xl text-[var(--color-warm-white)]">£1.09</p>
+              <p className="text-sm text-[var(--color-warm-white)]/80">per month (£12.99/year)</p>
+              <p className="mt-4 text-sm text-[var(--color-warm-white)]/90">
+                For dog owners who want to plan, track, and cook with confidence.
+              </p>
+              <ul className="mt-6 flex-1 space-y-3">
+                {PACK_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-[var(--color-warm-white)]/90">
+                    <span className="mt-0.5 shrink-0">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/signup"
+                className="mt-8 block rounded-full bg-[var(--color-warm-white)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-coral)] transition-transform hover:-translate-y-0.5"
+              >
+                Start 14-day free trial →
+              </Link>
+              <p className="mt-3 text-center text-xs text-[var(--color-warm-white)]/70">
+                No card required. Cancel any time.
+              </p>
+            </div>
+
+            {/* Pack Pro */}
+            <div className="flex flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8">
+              <p className="eyebrow">Pack Pro</p>
+              <p className="mt-4 font-heading text-4xl text-[var(--color-ink)]">£2.08</p>
+              <p className="text-sm text-[var(--color-ink-soft)]">per month (£24.99/year)</p>
+              <p className="mt-4 text-sm text-[var(--color-ink-soft)]">For the dedicated dog parent.</p>
+              <ul className="mt-6 flex-1 space-y-3">
+                {PACK_PRO_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-[var(--color-ink-soft)]">
+                    <span className="mt-0.5 shrink-0 text-[var(--color-coral)]">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/signup"
+                className="mt-8 block rounded-full bg-[var(--color-coral)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+              >
+                Start 14-day free trial →
+              </Link>
+              <p className="mt-3 text-center text-xs text-[var(--color-ink-soft)]">
+                No card required. Cancel any time.
+              </p>
+            </div>
+
+            {/* Founding Member */}
+            <div className="flex flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8">
+              <div className="mb-3 self-start rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-[var(--color-ink)]">
+                FIRST 500 ONLY
+              </div>
+              <p className="eyebrow">Founding Member</p>
+              <p className="mt-4 font-heading text-4xl text-[var(--color-ink)]">£1.50</p>
+              <p className="text-sm text-[var(--color-ink-soft)]">per month (£17.99/yr) — locked forever</p>
+              <p className="mt-4 text-sm text-[var(--color-ink-soft)]">
+                Join the first 500. Lock in the best price and help shape what Recipup becomes.
+              </p>
+              <ul className="mt-6 flex-1 space-y-3">
+                {FOUNDING_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-[var(--color-ink-soft)]">
+                    <span className="mt-0.5 shrink-0 text-[var(--color-coral)]">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/signup"
+                className="mt-8 block rounded-full bg-[var(--color-forest)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+              >
+                Claim founding spot →
+              </Link>
+              <p className="mt-3 text-center text-xs text-[var(--color-ink-soft)]">
+                Limited to the first 500 members.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="bg-[var(--color-sand)] py-12 md:py-20">
+        <div className="mx-auto max-w-2xl px-6 md:px-10">
+          <h2 className="mb-10 font-heading text-2xl text-[var(--color-ink)]">Common questions</h2>
+          <FaqAccordion />
+        </div>
+      </section>
+
+      {/* ── CLOSING CTA ── */}
+      <section className="bg-[var(--color-forest)] py-12 text-center md:py-20">
+        <div className="mx-auto max-w-xl px-6">
+          <h2 className="font-heading text-3xl text-[var(--color-warm-white)]">
+            Ready to start cooking for your dog?
+          </h2>
+          <p className="mt-4 text-[var(--color-warm-white)]/80">
+            14 days free. No card required. Full access from day one.
+          </p>
+          <Link
+            href="/signup"
+            className="mt-8 inline-block rounded-full bg-[var(--color-warm-white)] px-8 py-4 text-sm font-semibold text-[var(--color-forest)] transition-transform hover:-translate-y-0.5"
+          >
+            Create your free account →
           </Link>
+          <p className="mt-4 text-sm text-[var(--color-warm-white)]/60">
+            14-day free trial · No card required · Cancel any time
+          </p>
         </div>
-
-        {/* Pack */}
-        <div className="flex flex-col rounded-3xl border-2 border-[var(--color-accent)] bg-[var(--color-accent)] p-7 text-[var(--color-cream)]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-cream)]/70">Pack</p>
-            <p className="mt-3 font-heading text-4xl">£1.09</p>
-            <p className="text-sm text-[var(--color-cream)]/80">per month</p>
-            <p className="mt-4 text-sm text-[var(--color-cream)]/90">For dog owners who want to plan, track, and cook with confidence.</p>
-          </div>
-          <ul className="mt-6 flex-1 space-y-3">
-            {PACK_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-[var(--color-cream)]/90">
-                <span className="mt-0.5">✓</span>
-                {f}
-              </li>
-            ))}
-          </ul>
-          <Link href="/signup" className="mt-8 block rounded-full bg-[var(--color-cream)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-accent)] transition-transform hover:-translate-y-0.5">
-            Start 14-day free trial →
-          </Link>
-          <p className="mt-3 text-center text-xs text-[var(--color-cream)]/70">No card required. Cancel any time.</p>
-        </div>
-
-        {/* Pack Pro */}
-        <div className="flex flex-col rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-7">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-ink-soft)]">Pack Pro</p>
-            <p className="mt-3 font-heading text-4xl text-[var(--color-ink)]">£2.08</p>
-            <p className="text-sm text-[var(--color-ink-soft)]">per month <span className="text-xs">(€24.99/yr)</span></p>
-            <p className="mt-4 text-sm text-[var(--color-ink-soft)]">For the dedicated dog parent.</p>
-          </div>
-          <ul className="mt-6 flex-1 space-y-3">
-            {PACK_PRO_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-[var(--color-ink-soft)]">
-                <span className="mt-0.5 text-[var(--color-accent)]">✓</span>
-                {f}
-              </li>
-            ))}
-          </ul>
-          <Link href="/signup" className="mt-8 block rounded-full border border-[var(--color-border-strong)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-cream)]">
-            Start 14-day free trial →
-          </Link>
-          <p className="mt-3 text-center text-xs text-[var(--color-ink-soft)]">No card required. Cancel any time.</p>
-        </div>
-
-        {/* Founding */}
-        <div className="flex flex-col rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-7">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">Founding Member</p>
-            <p className="mt-3 font-heading text-4xl text-[var(--color-ink)]">£1.50</p>
-            <p className="text-sm text-[var(--color-ink-soft)]">per month <span className="text-xs">(€17.99/yr)</span>, locked in forever</p>
-            <p className="mt-4 text-sm text-[var(--color-ink-soft)]">Join the first 500. Lock in the best price — and help shape what Recipup becomes.</p>
-          </div>
-          <ul className="mt-6 flex-1 space-y-3">
-            {FOUNDING_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-[var(--color-ink-soft)]">
-                <span className="mt-0.5 text-[var(--color-accent)]">✓</span>
-                {f}
-              </li>
-            ))}
-          </ul>
-          <Link href="/signup" className="mt-8 block rounded-full bg-[var(--color-accent)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5">
-            Claim founding spot →
-          </Link>
-          <p className="mt-3 text-center text-xs text-[var(--color-ink-soft)]">Limited to the first 500 members.</p>
-        </div>
-      </div>
-
-      <div className="mt-14 rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-8">
-        <h2 className="font-heading text-2xl text-[var(--color-ink)]">Common questions</h2>
-        <div className="mt-6 space-y-6">
-          <div>
-            <h3 className="font-semibold text-[var(--color-ink)]">What happens at the end of my trial?</h3>
-            <p className="mt-2 text-sm text-[var(--color-ink-soft)]">Your account moves to the Free plan automatically — no charges, no surprises. You keep everything you saved. Upgrade when you&apos;re ready.</p>
-          </div>
-          <div>
-            <h3 className="font-semibold text-[var(--color-ink)]">Can I use Recipup for more than one dog?</h3>
-            <p className="mt-2 text-sm text-[var(--color-ink-soft)]">Yes. You can add multiple dogs and build separate recipe plans for each. Every profile is independent.</p>
-          </div>
-          <div>
-            <h3 className="font-semibold text-[var(--color-ink)]">Is Recipup suitable for puppies and senior dogs?</h3>
-            <p className="mt-2 text-sm text-[var(--color-ink-soft)]">Yes — Recipup adjusts calorie targets and nutrition guidelines for all life stages, from puppies through to seniors. Just tell us your dog&apos;s age and we handle the rest.</p>
-          </div>
-          <div>
-            <h3 className="font-semibold text-[var(--color-ink)]">Do I need to be a confident cook?</h3>
-            <p className="mt-2 text-sm text-[var(--color-ink-soft)]">Not at all. Recipup gives you clear, step-by-step instructions built around your cooking equipment and how often you want to cook. If you can boil water, you can follow a Recipup recipe.</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-10 text-center">
-        <p className="text-sm text-[var(--color-ink-soft)]">
-          Questions? <Link href="/about" className="font-semibold text-[var(--color-accent)] hover:underline">Read more about us</Link> or{" "}
-          <a href="mailto:hello@recipup.co" className="font-semibold text-[var(--color-accent)] hover:underline">get in touch</a>.
-        </p>
-      </div>
+      </section>
     </div>
   );
 }

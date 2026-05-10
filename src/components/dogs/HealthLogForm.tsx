@@ -78,8 +78,8 @@ function ChipGroup<T extends string>({
           onClick={() => onChange(opt.value)}
           className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
             value === opt.value
-              ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]"
-              : "border-[var(--color-border-strong)] text-[var(--color-ink)] hover:border-[var(--color-accent)]"
+              ? "border-[var(--color-coral)] bg-[var(--color-coral)] text-[var(--color-warm-white)]"
+              : "border-[var(--color-sand-deep)] bg-[var(--color-sand)] text-[var(--color-ink)] hover:border-[var(--color-coral)]"
           }`}
         >
           {opt.label}
@@ -137,9 +137,9 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Core metrics */}
-      <section className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6 md:p-8">
+      <section className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
         <h2 className="font-heading text-xl text-[var(--color-ink)]">This week</h2>
 
         {/* Weight */}
@@ -148,7 +148,7 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
             Weight today
           </label>
           {previousWeekLabel && defaultValues?.weight_kg && (
-            <p className="mt-0.5 text-xs text-[var(--color-ink-soft)]">
+            <p className="mt-0.5 text-xs text-[var(--color-ink-300)]">
               Last logged: {defaultValues.weight_kg}kg ({previousWeekLabel})
             </p>
           )}
@@ -161,9 +161,9 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
               value={weightKg}
               onChange={(e) => setWeightKg(e.target.value)}
               placeholder="e.g. 28.5"
-              className="h-12 w-32 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-5 text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-soft)] focus:border-[var(--color-accent)]"
+              className="h-12 w-32 rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-5 text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-300)] focus:border-[var(--color-coral)]"
             />
-            <span className="text-sm text-[var(--color-ink-soft)]">kg</span>
+            <span className="text-sm text-[var(--color-ink-500)]">kg</span>
           </div>
         </div>
 
@@ -190,15 +190,15 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
                 onClick={() => setCoatScore(n)}
                 className={`h-11 w-11 rounded-full border text-sm font-semibold transition-colors ${
                   coatScore === n
-                    ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]"
-                    : "border-[var(--color-border-strong)] text-[var(--color-ink)] hover:border-[var(--color-accent)]"
+                    ? "border-[var(--color-coral)] bg-[var(--color-coral)] text-[var(--color-warm-white)]"
+                    : "border-[var(--color-sand-deep)] bg-[var(--color-sand)] text-[var(--color-ink)] hover:border-[var(--color-coral)]"
                 }`}
               >
                 {n}
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-[var(--color-ink-soft)]">1 = very dull/flaky · 5 = glossy and healthy</p>
+          <p className="mt-2 text-xs text-[var(--color-ink-300)]">1 = very dull/flaky · 5 = glossy and healthy</p>
         </div>
 
         {/* Appetite */}
@@ -215,11 +215,11 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
       </section>
 
       {/* Optional section */}
-      <section className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6 md:p-8">
+      <section className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
         <button
           type="button"
           onClick={() => setShowOptional((v) => !v)}
-          className="text-sm font-semibold text-[var(--color-accent)] hover:underline"
+          className="text-sm font-semibold text-[var(--color-coral)] hover:underline"
         >
           {showOptional ? "− Less detail" : "+ Add more detail"}
         </button>
@@ -263,7 +263,7 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 placeholder={`Anything else worth noting about ${dogName} this week...`}
-                className="mt-2 w-full rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 py-3 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-soft)] focus:border-[var(--color-accent)]"
+                className="mt-2 w-full rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-4 py-3 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-300)] focus:border-[var(--color-coral)]"
               />
             </div>
           </div>
@@ -276,12 +276,12 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
         type="button"
         onClick={handleSubmit}
         disabled={!isValid || submitting}
-        className="w-full rounded-full bg-[var(--color-accent)] py-4 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5 disabled:opacity-40"
+        className="w-full rounded-full bg-[var(--color-coral)] py-4 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-40"
       >
         {submitting ? "Saving..." : "Save this week's log →"}
       </button>
 
-      <p className="text-center text-xs text-[var(--color-ink-soft)]">
+      <p className="text-center text-xs text-[var(--color-ink-300)]">
         Recipup is not a veterinary tool. Always speak to your vet if you have concerns about {dogName}&apos;s health.
       </p>
     </div>

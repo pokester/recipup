@@ -3,9 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { calculateRecipeCost, compareToKibble, compareToCompetitors } from "@/lib/cost-estimator";
 import { analyseHealthLogs, buildHealthPromptContext, type HealthLog } from "@/lib/health-analysis";
 
+export const maxDuration = 60;
+
 type DogProfile = Record<string, unknown>;
 type ClaudeRecipeLike = { safety_score: number } & Record<string, unknown>;
 type ClaudeParsedResponse = { recipes?: unknown[] } & Record<string, unknown>;
+
+function sanitiseInput(str: string | undefined, maxLength: number): string {
+  if (!str) return "";
+  return str.slice(0, maxLength).replace(/[<>{}]/g, "").trim();
+}
 
 function extractFirstJson(text: string) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
@@ -16,7 +23,7 @@ function extractFirstJson(text: string) {
   return raw.slice(firstBrace, lastBrace + 1);
 }
 
-async function callClaude(dogProfile: DogProfile, pantryContext?: string, costTarget?: string, healthContext?: string) {
+async function callClaude(dogProfile: DogProfile, model: string, pantryContext?: string, costTarget?: string, healthContext?: string) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
 
@@ -32,6 +39,7 @@ RECIPE REQUIREMENTS:
   RER = 70 × (weight_kg ^ 0.75)
   Then multiply by activity factor:
   low = 1.2, moderate = 1.4, active = 1.6, working = 1.8
+  If sex is "male_neutered" or "female_spayed", apply an additional 0.9× multiplier (neutered/spayed dogs need ~10% fewer calories)
 - Never include any ingredient listed in allergens or other_exclusions
 - For health conditions, apply these rules:
   kidney_disease stage 3-4: strict low phosphorus, low protein, avoid high-potassium ingredients
@@ -90,29 +98,44 @@ Return this exact structure:
   const parts = [healthContext, pantryContext, basePrompt].filter(Boolean);
   const userPrompt = parts.join("\n\n");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-beta": "prompt-caching-2024-07-31",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
-            { type: "text", text: userPrompt },
-          ],
-        },
-      ],
-      temperature: 0.4,
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000);
+  let res!: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "prompt-caching-2024-07-31",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+              { type: "text", text: userPrompt },
+            ],
+          },
+        ],
+        temperature: 0.4,
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if ((err as Error).name === "AbortError") {
+      const e = new Error("AbortError");
+      e.name = "AbortError";
+      throw e;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) throw new Error(`Anthropic request failed (${res.status})`);
 
@@ -131,58 +154,82 @@ export async function POST(req: Request) {
     const body = (await req.json()) as DogProfile & { pantry_context?: string };
     const { pantry_context: pantryContext, ...dogProfile } = body;
 
-    let hasCostAccess = false;
-    let market: "uk" | "nl" = "uk";
+    // Auth guard
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return Response.json({ error: "Unauthorised" }, { status: 401 });
 
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("subscription_tier, trial_ends_at, market")
-          .eq("id", user.id)
-          .single();
-
-        const isFree =
-          !profile ||
-          profile.subscription_tier === "free" ||
-          profile.subscription_tier === null;
-        const inTrial = profile?.trial_ends_at
-          ? new Date(profile.trial_ends_at as string) > new Date()
-          : false;
-
-        hasCostAccess = !isFree || inTrial;
-        market = (profile?.market as "uk" | "nl") ?? "uk";
-
-        if (isFree && !inTrial) {
-          const monthStart = new Date();
-          monthStart.setDate(1);
-          monthStart.setHours(0, 0, 0, 0);
-
-          const { count } = await supabase
-            .from("recipe_generations")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .gte("created_at", monthStart.toISOString());
-
-          if ((count ?? 0) >= 3) {
-            return NextResponse.json(
-              { message: "Monthly generation limit reached. Upgrade to Pack for unlimited recipes." },
-              { status: 403 },
-            );
-          }
+    // Sanitise user-controlled fields before prompt injection
+    const dogObj = dogProfile.dog as Record<string, unknown> | undefined;
+    if (dogObj) {
+      if (typeof dogObj.name === "string") dogObj.name = sanitiseInput(dogObj.name, 50);
+      if (typeof dogObj.notes === "string") dogObj.notes = sanitiseInput(dogObj.notes, 500);
+      if (typeof dogObj.other_exclusions === "string") dogObj.other_exclusions = sanitiseInput(dogObj.other_exclusions, 500);
+      if (dogObj.health_detail && typeof dogObj.health_detail === "object") {
+        const hd = dogObj.health_detail as Record<string, unknown>;
+        for (const k of Object.keys(hd)) {
+          if (typeof hd[k] === "string") hd[k] = sanitiseInput(hd[k] as string, 300);
         }
       }
     }
+    const sanitisedPantry = pantryContext ? sanitiseInput(pantryContext, 10000) : undefined;
+
+    // Fetch profile for tier, limits, market, and model selection
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_tier, trial_ends_at, market")
+      .eq("id", user.id)
+      .single();
+
+    const now = new Date();
+    const trialActive = profile?.trial_ends_at
+      ? new Date(profile.trial_ends_at as string) > now
+      : false;
+    const tier = profile?.subscription_tier as string | null;
+    const isFreeUser = (tier === "free" || tier === null) && !trialActive;
+    const hasCostAccess = !isFreeUser;
+    const market = (profile?.market as "uk" | "nl") ?? "uk";
+
+    // Monthly limit — free tier only
+    if (isFreeUser) {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { count } = await supabase
+        .from("recipe_generations")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", startOfMonth);
+      if (count !== null && count >= 3) {
+        return Response.json({
+          error: "monthly_limit_reached",
+          message: "You've used your 3 free recipe generations this month. Upgrade to Pack for unlimited recipes.",
+          upgrade_url: "/pricing",
+        }, { status: 403 });
+      }
+    }
+
+    // Hourly rate limit — all tiers
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from("recipe_generations")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", oneHourAgo);
+    if (recentCount !== null && recentCount >= 10) {
+      return Response.json({
+        error: "rate_limit_exceeded",
+        message: "You've generated a lot of recipes this hour. Take a breather — you can generate more in a little while.",
+      }, { status: 429 });
+    }
+
+    // Model selection by tier
+    const model = (trialActive || tier === "pack" || tier === "pack_pro" || tier === "founding")
+      ? "claude-sonnet-4-20250514"
+      : "claude-haiku-4-5-20251001";
 
     // Build cost targeting prompt if the dog has a known food spend
-    const dogObj = (dogProfile.dog as Record<string, unknown> | undefined) ?? {};
-    const foodSpendMonthly = dogObj.current_food_spend_monthly as number | undefined;
-    const weightKg = dogObj.weight_kg as number | undefined;
+    const dogBase = (dogProfile.dog as Record<string, unknown> | undefined) ?? {};
+    const foodSpendMonthly = dogBase.current_food_spend_monthly as number | undefined;
+    const weightKg = dogBase.weight_kg as number | undefined;
 
     let costTarget: string | undefined;
     if (foodSpendMonthly && foodSpendMonthly > 0) {
@@ -191,62 +238,49 @@ export async function POST(req: Request) {
       costTarget = `COST TARGET:\nThe user currently spends ${cur}${foodSpendMonthly}/month on dog food (${cur}${dailyBudget}/day). Where nutritionally possible, target ingredients that keep daily food cost at or below this amount. Flag in breed_notes if this target cannot be met nutritionally.`;
     }
 
-    // Fetch health context for logged-in users
+    // Fetch health context
     let healthContext: string | undefined;
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const dogId = (dogProfile.dog as Record<string, unknown> | undefined)?.id as string | undefined;
-          if (dogId) {
-            const { data: healthLogs } = await supabase
-              .from("health_logs")
-              .select("week_start, weight_kg, energy_level, coat_score, appetite, itching, joint_stiffness, digestion, vomiting")
-              .eq("dog_id", dogId)
-              .order("week_start", { ascending: false })
-              .limit(4);
-            if (healthLogs && healthLogs.length > 0) {
-              const { data: dogRow } = await supabase
-                .from("dogs")
-                .select("goal, weight_kg, health_conditions, name")
-                .eq("id", dogId)
-                .single();
-              const typedDog = dogRow as { goal: string | null; weight_kg: number | null; health_conditions: string[]; name: string } | null;
-              const analysis = analyseHealthLogs(healthLogs as HealthLog[], {
-                goal: typedDog?.goal ?? "maintain_weight",
-                weight_kg: typedDog?.weight_kg ?? 20,
-                health_conditions: typedDog?.health_conditions ?? [],
-                dog_name: typedDog?.name,
-              });
-              healthContext = buildHealthPromptContext(healthLogs as HealthLog[], analysis.adjustments) || undefined;
-            }
-          }
+    try {
+      const dogId = dogObj?.id as string | undefined;
+      if (dogId) {
+        const { data: healthLogs } = await supabase
+          .from("health_logs")
+          .select("week_start, weight_kg, energy_level, coat_score, appetite, itching, joint_stiffness, digestion, vomiting")
+          .eq("dog_id", dogId)
+          .order("week_start", { ascending: false })
+          .limit(4);
+        if (healthLogs && healthLogs.length > 0) {
+          const { data: dogRow } = await supabase
+            .from("dogs")
+            .select("goal, weight_kg, health_conditions, name")
+            .eq("id", dogId)
+            .single();
+          const typedDog = dogRow as { goal: string | null; weight_kg: number | null; health_conditions: string[]; name: string } | null;
+          const analysis = analyseHealthLogs(healthLogs as HealthLog[], {
+            goal: typedDog?.goal ?? "maintain_weight",
+            weight_kg: typedDog?.weight_kg ?? 20,
+            health_conditions: typedDog?.health_conditions ?? [],
+            dog_name: typedDog?.name,
+          });
+          healthContext = buildHealthPromptContext(healthLogs as HealthLog[], analysis.adjustments) || undefined;
         }
-      } catch {
-        // Non-critical — proceed without health context
       }
+    } catch {
+      // Non-critical — proceed without health context
     }
 
-    const parsed = (await callClaude(dogProfile as DogProfile, pantryContext, costTarget, healthContext)) as ClaudeParsedResponse;
+    const parsed = (await callClaude(dogProfile as DogProfile, model, sanitisedPantry, costTarget, healthContext)) as ClaudeParsedResponse;
 
-    // Record generation
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      try {
-        const supabase = await createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from("recipe_generations").insert({
-            user_id: user.id,
-            recipes_generated: Array.isArray(parsed.recipes) ? parsed.recipes.length : 0,
-            profile_snapshot: dogProfile,
-          });
-        }
-      } catch {
-        // Non-fatal
-      }
+    // Log generation
+    try {
+      await supabase.from("recipe_generations").insert({
+        user_id: user.id,
+        dog_id: dogObj?.id as string | null ?? null,
+        profile_snapshot: dogProfile,
+        recipes_generated: Array.isArray(parsed.recipes) ? parsed.recipes.length : 0,
+      });
+    } catch {
+      // Non-fatal
     }
 
     // Filter unsafe recipes
@@ -293,7 +327,10 @@ export async function POST(req: Request) {
     );
 
     return NextResponse.json({ ...parsed, recipes: recipesWithCosts, has_cost_access: hasCostAccess, market }, { status: 200 });
-  } catch {
+  } catch (err) {
+    if ((err as Error).name === "AbortError") {
+      return Response.json({ error: "Recipe generation timed out. Please try again." }, { status: 504 });
+    }
     return NextResponse.json({ message: "Recipe generation failed" }, { status: 500 });
   }
 }

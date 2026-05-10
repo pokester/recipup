@@ -8,7 +8,13 @@ type Dog = {
   breed: string | null;
   age_years: number | null;
   weight_kg: number | null;
+  sex: string | null;
 };
+
+function toTitleCase(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+}
 
 type HealthLogSummary = {
   dog_id: string;
@@ -32,10 +38,17 @@ function daysAgoLabel(dateStr: string) {
   return `${days} days ago`;
 }
 
-const DOT_CLASSES = {
+function ageLabel(years: number | null): string | null {
+  if (years === null) return null;
+  if (years < 1) return "Puppy";
+  if (years >= 8) return `${years}y (senior)`;
+  return `${years}y`;
+}
+
+const DOT_COLORS = {
   green: "bg-green-500",
   amber: "bg-amber-400",
-  grey: "bg-[var(--color-border-strong)]",
+  grey: "bg-[var(--color-ink-100)]",
 };
 
 export default async function DogsPage() {
@@ -47,14 +60,13 @@ export default async function DogsPage() {
 
   const { data: dogs } = await supabase
     .from("dogs")
-    .select("id, name, breed, age_years, weight_kg")
+    .select("id, name, breed, age_years, weight_kg, sex")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
   const typedDogs = (dogs ?? []) as Dog[];
 
-  // Fetch latest health log per dog
   let latestLogs: HealthLogSummary[] = [];
   if (typedDogs.length > 0) {
     const { data: logsData } = await supabase
@@ -76,86 +88,82 @@ export default async function DogsPage() {
   const logByDogId = new Map(latestLogs.map((l) => [l.dog_id, l]));
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10 md:px-10">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="mx-auto max-w-4xl px-6">
+      {/* Page header */}
+      <div className="flex items-end justify-between pt-12 pb-8">
         <div>
-          <h1 className="font-heading text-4xl text-[var(--color-ink)]">Your pack</h1>
-          <p className="mt-2 text-[var(--color-ink-soft)]">
-            {typedDogs.length > 0
-              ? "Every dog, every profile, every recipe plan — all in one place."
-              : "No dogs added yet."}
+          <h1 className="font-heading text-3xl text-[var(--color-ink)]">Your pack</h1>
+          <p className="mt-2 max-w-md text-sm text-[var(--color-ink-500)]">
+            Every dog, every profile, every recipe plan — all in one place.
           </p>
         </div>
         <Link
           href="/onboard"
-          className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+          className="rounded-full bg-[var(--color-coral)] px-5 py-2.5 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
         >
           Add a dog +
         </Link>
       </div>
 
       {typedDogs.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-4 pb-16">
           {typedDogs.map((dog) => {
             const log = logByDogId.get(dog.id) ?? null;
             const dotStatus = healthStatusDot(log?.week_start);
+            const initials = toTitleCase(dog.name).slice(0, 2).toUpperCase();
+            const subtitle = [
+              dog.breed ? dog.breed.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : null,
+              ageLabel(dog.age_years),
+              dog.weight_kg !== null ? `${dog.weight_kg}kg` : null,
+              dog.sex ? toTitleCase(dog.sex.replace(/_/g, " ")) : null,
+            ].filter(Boolean).join(" · ");
 
             return (
               <div
                 key={dog.id}
-                className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6"
+                className="flex items-center gap-6 rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <Link
-                      href={`/dogs/${dog.id}`}
-                      className="font-heading text-2xl text-[var(--color-ink)] hover:text-[var(--color-accent)]"
-                    >
-                      {dog.name}
-                    </Link>
-                    {dog.breed && (
-                      <p className="mt-0.5 text-sm capitalize text-[var(--color-ink-soft)]">
-                        {dog.breed.replace(/_/g, " ")}
-                      </p>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {dog.age_years !== null && (
-                        <span className="text-xs text-[var(--color-ink-soft)]">{dog.age_years}y</span>
-                      )}
-                      {dog.weight_kg !== null && (
-                        <span className="text-xs text-[var(--color-ink-soft)]">{dog.weight_kg}kg</span>
-                      )}
-                    </div>
+                {/* Avatar + health dot */}
+                <div className="flex shrink-0 flex-col items-center gap-2">
+                  <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[var(--color-coral)]/10">
+                    <span className="font-heading text-2xl font-semibold text-[var(--color-coral)]">{initials}</span>
                   </div>
                   <span
-                    className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${DOT_CLASSES[dotStatus]}`}
+                    className={`h-2 w-2 rounded-full ${DOT_COLORS[dotStatus]}`}
                     title={dotStatus === "green" ? "Logged this week" : dotStatus === "amber" ? "Logged 1–2 weeks ago" : "No recent log"}
                   />
                 </div>
 
-                {/* Health snapshot */}
-                <div className="mt-3">
-                  {log ? (
-                    <p className="text-xs text-[var(--color-ink-soft)]">
-                      Weight: {log.weight_kg != null ? `${log.weight_kg}kg` : "—"}
-                      {log.coat_score != null ? ` · Coat: ${log.coat_score}/5` : ""}
-                      {" · "}Last logged {daysAgoLabel(log.week_start)}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-[var(--color-ink-soft)]">No health logs yet</p>
+                {/* Info */}
+                <div className="min-w-0 flex-1">
+                  <p className="font-heading text-xl text-[var(--color-ink)]">{toTitleCase(dog.name)}</p>
+                  {subtitle && (
+                    <p className="mt-1 text-sm text-[var(--color-ink-500)]">{subtitle}</p>
                   )}
+                  <div className="mt-3">
+                    {log ? (
+                      <p className="text-xs text-[var(--color-ink-500)]">
+                        Weight: {log.weight_kg != null ? `${log.weight_kg}kg` : "—"}
+                        {log.coat_score != null ? ` · Coat: ${log.coat_score}/5` : ""}
+                        {" · "}Last logged {daysAgoLabel(log.week_start)}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-[var(--color-ink-300)]">No health logs yet</p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="mt-5 flex flex-col gap-2">
+                {/* Actions */}
+                <div className="flex shrink-0 flex-col gap-2">
                   <Link
                     href={`/dogs/${dog.id}`}
-                    className="block rounded-full border border-[var(--color-border-strong)] py-2 text-center text-sm font-semibold text-[var(--color-ink)]"
+                    className="rounded-full border border-[var(--color-ink-300)] px-4 py-2 text-center text-sm font-semibold text-[var(--color-ink)]"
                   >
                     View profile →
                   </Link>
                   <Link
                     href={`/onboard?dog_id=${dog.id}`}
-                    className="block rounded-full bg-[var(--color-accent)] py-2 text-center text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+                    className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-center text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
                   >
                     Generate recipes →
                   </Link>
@@ -165,14 +173,12 @@ export default async function DogsPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-10 text-center">
+        <div className="py-20 text-center">
           <p className="font-heading text-2xl text-[var(--color-ink)]">No dogs added yet.</p>
-          <p className="mt-2 text-[var(--color-ink-soft)]">
-            Add your first dog&apos;s profile to get started.
-          </p>
+          <p className="mt-3 text-[var(--color-ink-500)]">Add your first dog&apos;s profile to get started.</p>
           <Link
             href="/onboard"
-            className="mt-6 inline-block rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+            className="mt-8 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
           >
             Add your first dog →
           </Link>

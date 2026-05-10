@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+
+export const maxDuration = 60;
 
 type RequestBody = {
+  plan_id: string;
   dog_profile: Record<string, unknown>;
   pantry_context?: string;
   day_number: number;
@@ -34,6 +38,20 @@ export async function POST(req: Request) {
     const body = (await req.json()) as RequestBody;
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return NextResponse.json({ message: "Missing API key" }, { status: 500 });
+
+    // Auth guard
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return Response.json({ error: "Unauthorised" }, { status: 401 });
+
+    // Ownership check — verify plan belongs to authenticated user
+    const { data: plan } = await supabase
+      .from("meal_plans")
+      .select("id")
+      .eq("id", body.plan_id)
+      .eq("user_id", user.id)
+      .single();
+    if (!plan) return Response.json({ error: "Forbidden" }, { status: 403 });
 
     const existingProteins = body.existing_week
       .map((d) => {
@@ -79,28 +97,42 @@ Return this exact structure:
   ]
 }`;
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 4096,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: systemPrompt },
-              { type: "text", text: userPrompt },
-            ],
-          },
-        ],
-        temperature: 0.6,
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 55000);
+    let res!: Response;
+    try {
+      res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-beta": "prompt-caching-2024-07-31",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 4096,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+                { type: "text", text: userPrompt },
+              ],
+            },
+          ],
+          temperature: 0.6,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if ((err as Error).name === "AbortError") {
+        return Response.json({ error: "Recipe generation timed out. Please try again." }, { status: 504 });
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!res.ok) throw new Error(`Anthropic error (${res.status})`);
 
@@ -114,7 +146,9 @@ Return this exact structure:
     const parsed = JSON.parse(jsonText) as RegenerateResponse;
     return NextResponse.json(parsed);
   } catch (err) {
-    console.error("regenerate-day error:", err);
+    if (process.env.NODE_ENV === "development") {
+      console.error("regenerate-day error:", err);
+    }
     return NextResponse.json({ message: "Regeneration failed" }, { status: 500 });
   }
 }

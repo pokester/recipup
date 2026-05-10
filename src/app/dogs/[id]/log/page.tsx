@@ -3,6 +3,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { HealthLogForm } from "@/components/dogs/HealthLogForm";
 
+function toTitleCase(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+}
+
 export default async function HealthLogPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -11,7 +16,6 @@ export default async function HealthLogPage({ params }: { params: Promise<{ id: 
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Check Pack Pro / trial access
   const { data: profile } = await supabase
     .from("profiles")
     .select("subscription_tier, trial_ends_at")
@@ -35,7 +39,6 @@ export default async function HealthLogPage({ params }: { params: Promise<{ id: 
   const dog = dogData as { id: string; name: string; health_conditions: string[] };
   const hasJointCondition = (dog.health_conditions ?? []).includes("joint_issues");
 
-  // Fetch last log for pre-fill
   const { data: lastLog } = await supabase
     .from("health_logs")
     .select("week_start, weight_kg, energy_level, coat_score, appetite, itching, joint_stiffness, digestion, vomiting, notes")
@@ -64,21 +67,21 @@ export default async function HealthLogPage({ params }: { params: Promise<{ id: 
     : null;
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10 md:px-8">
+    <div className="mx-auto max-w-2xl px-6 py-10">
       <Link
         href={`/dogs/${id}`}
-        className="mb-6 inline-block text-sm font-semibold text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]"
+        className="mb-6 inline-block text-sm font-medium text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
       >
-        ← Back to {dog.name}&apos;s profile
+        ← Back to {toTitleCase(dog.name)}&apos;s profile
       </Link>
 
       <div className="mb-8">
         <h1 className="font-heading text-3xl text-[var(--color-ink)]">
-          How&apos;s {dog.name} doing this week? 🐾
+          How&apos;s {toTitleCase(dog.name)} doing this week? 🐾
         </h1>
-        <p className="mt-2 text-[var(--color-ink-soft)]">Takes about 60 seconds.</p>
+        <p className="mt-2 text-[var(--color-ink-500)]">Takes about 60 seconds.</p>
         {typedLastLog && (
-          <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+          <p className="mt-1 text-xs text-[var(--color-ink-300)]">
             Pre-filled from your last log ({previousWeekLabel}). Just update what&apos;s changed.
           </p>
         )}

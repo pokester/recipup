@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyseHealthLogs, buildHealthPromptContext, type HealthLog } from "@/lib/health-analysis";
 
+export const maxDuration = 120;
+
+function sanitiseInput(str: string | undefined, maxLength: number): string {
+  if (!str) return "";
+  return str.slice(0, maxLength).replace(/[<>{}]/g, "").trim();
+}
+
 type PinnedDay = { day_number: number; recipe_data: Record<string, unknown> };
 
 type RequestBody = {
@@ -50,7 +57,7 @@ function extractFirstJson(text: string): string | null {
   return raw.slice(firstBrace, lastBrace + 1);
 }
 
-async function generateWeekWithClaude(body: RequestBody): Promise<WeekResponse> {
+async function generateWeekWithClaude(body: RequestBody, model: string): Promise<WeekResponse> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
 
@@ -144,29 +151,44 @@ Return this exact JSON structure (all 7 days, Monday=1 through Sunday=7):
   }
 }`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-beta": "prompt-caching-2024-07-31",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 8192,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
-            { type: "text", text: userPrompt },
-          ],
-        },
-      ],
-      temperature: 0.5,
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000);
+  let res!: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "prompt-caching-2024-07-31",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 8192,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+              { type: "text", text: userPrompt },
+            ],
+          },
+        ],
+        temperature: 0.5,
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if ((err as Error).name === "AbortError") {
+      const e = new Error("AbortError");
+      e.name = "AbortError";
+      throw e;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) throw new Error(`Anthropic error (${res.status})`);
 
@@ -200,6 +222,21 @@ export async function POST(req: Request) {
       .single();
     if (!plan) return NextResponse.json({ message: "Plan not found" }, { status: 404 });
 
+    // Model selection by tier
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_tier, trial_ends_at")
+      .eq("id", user.id)
+      .single();
+    const now = new Date();
+    const trialActive = profile?.trial_ends_at
+      ? new Date(profile.trial_ends_at as string) > now
+      : false;
+    const tier = profile?.subscription_tier as string | null;
+    const model = (trialActive || tier === "pack" || tier === "pack_pro" || tier === "founding")
+      ? "claude-sonnet-4-20250514"
+      : "claude-haiku-4-5-20251001";
+
     // Inject health context if available
     if (!body.health_context) {
       try {
@@ -231,7 +268,20 @@ export async function POST(req: Request) {
       }
     }
 
-    const weekData = await generateWeekWithClaude(body);
+    // Sanitise user-controlled fields in the dog profile before prompt injection
+    const dp = body.dog_profile as Record<string, unknown>;
+    if (typeof dp.name === "string") dp.name = sanitiseInput(dp.name, 50);
+    if (typeof dp.notes === "string") dp.notes = sanitiseInput(dp.notes, 500);
+    if (typeof dp.other_exclusions === "string") dp.other_exclusions = sanitiseInput(dp.other_exclusions, 500);
+    if (dp.health_detail && typeof dp.health_detail === "object") {
+      const hd = dp.health_detail as Record<string, unknown>;
+      for (const k of Object.keys(hd)) {
+        if (typeof hd[k] === "string") hd[k] = sanitiseInput(hd[k] as string, 300);
+      }
+    }
+    if (typeof body.pantry_context === "string") body.pantry_context = sanitiseInput(body.pantry_context, 10000);
+
+    const weekData = await generateWeekWithClaude(body, model);
 
     // Calculate actual dates for each day of this week
     const weekStart = new Date(plan_start_date);
@@ -287,7 +337,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ plan_id, week_data: weekData });
   } catch (err) {
-    console.error("generate-plan-week error:", err);
+    if ((err as Error).name === "AbortError") {
+      return Response.json({ error: "Recipe generation timed out. Please try again." }, { status: 504 });
+    }
+    if (process.env.NODE_ENV === "development") {
+      console.error("generate-plan-week error:", err);
+    }
     return NextResponse.json({ message: "Plan generation failed" }, { status: 500 });
   }
 }

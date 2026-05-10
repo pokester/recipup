@@ -68,6 +68,11 @@ type Dog = { name: string; breed: string | null; weight_kg: number | null };
 
 type SwapOption = { option_number: number; recipe: Recipe };
 
+function toTitleCase(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+}
+
 function formatDateRange(start: string, end: string): string {
   const s = new Date(start);
   const e = new Date(end);
@@ -87,10 +92,14 @@ function cookingModeLabel(freq: string): string {
   return "🫙 One weekly cook";
 }
 
-function safetyColor(score: number): string {
-  if (score >= 85) return "text-green-700 border-green-300 bg-green-50";
-  if (score >= 70) return "text-amber-700 border-amber-300 bg-amber-50";
-  return "text-orange-700 border-orange-300 bg-orange-50";
+function safetyBadgeCls(score: number): string {
+  if (score >= 85) return "bg-[var(--color-forest-light)]/10 text-[var(--color-forest)] border-[var(--color-forest-light)]/30";
+  if (score >= 70) return "border-amber-200 bg-amber-50 text-amber-800";
+  return "border-orange-200 bg-orange-50 text-orange-800";
+}
+
+function stripDaySuffix(name: string): string {
+  return name.replace(/\s*\(Day \d+\)\s*$/, "").trim();
 }
 
 function addDays(dateStr: string, days: number): string {
@@ -119,6 +128,7 @@ export function PlanView({ planId }: { planId: string }) {
   const [swappingDayId, setSwappingDayId] = useState<string | null>(null);
   const [swapOptions, setSwapOptions] = useState<SwapOption[]>([]);
   const [swappingLoading, setSwappingLoading] = useState(false);
+  const [swapError, setSwapError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -154,7 +164,6 @@ export function PlanView({ planId }: { planId: string }) {
     void load();
   }, [planId, router]);
 
-  // Days for the currently viewed week
   const weekDays = useMemo(() => {
     if (!plan) return [];
     const { start, end } = getWeekDays(plan.start_date, currentWeek);
@@ -202,7 +211,6 @@ export function PlanView({ planId }: { planId: string }) {
 
       if (!res.ok) throw new Error("Generation failed");
 
-      // Reload days
       const { data: freshDays } = await supabase
         .from("meal_plan_days")
         .select("id, day_date, day_number, recipe_data, is_pinned, source")
@@ -210,11 +218,11 @@ export function PlanView({ planId }: { planId: string }) {
         .order("day_date", { ascending: true });
       setAllDays((freshDays ?? []) as unknown as MealPlanDay[]);
 
-      // Refresh plan for updated cost/nutrition
       const { data: freshPlan } = await supabase.from("meal_plans").select("*").eq("id", planId).single();
       if (freshPlan) setPlan(freshPlan as unknown as MealPlan);
     } catch {
-      alert("Week generation failed. Please try again.");
+      setSwapError("Week generation failed. Please try again.");
+      setTimeout(() => setSwapError(null), 5000);
     }
     setGeneratingWeek(null);
   }, [plan, dog, planId, currentWeek, allDays]);
@@ -241,6 +249,7 @@ export function PlanView({ planId }: { planId: string }) {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          plan_id: planId,
           dog_profile: dogFull ?? {},
           pantry_context: pantryContext,
           day_number: day.day_number,
@@ -254,11 +263,12 @@ export function PlanView({ planId }: { planId: string }) {
       const data = (await res.json()) as { options: SwapOption[] };
       setSwapOptions(data.options ?? []);
     } catch {
-      alert("Could not load alternatives. Please try again.");
+      setSwapError("Could not load alternatives. Please try again.");
+      setTimeout(() => setSwapError(null), 5000);
       setSwappingDayId(null);
     }
     setSwappingLoading(false);
-  }, [plan, weekDays, swappingLoading]);
+  }, [plan, weekDays, swappingLoading, planId]);
 
   const handleChooseSwap = useCallback(async (day: MealPlanDay, recipe: Recipe) => {
     const supabase = createClient();
@@ -290,7 +300,7 @@ export function PlanView({ planId }: { planId: string }) {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="animate-pulse text-sm text-[var(--color-ink-soft)]">Loading plan…</p>
+        <p className="animate-pulse text-sm text-[var(--color-ink-500)]">Loading plan…</p>
       </div>
     );
   }
@@ -300,51 +310,52 @@ export function PlanView({ planId }: { planId: string }) {
   const totalWeeks = plan.total_weeks ?? 1;
   const isMonthly = plan.plan_type === "monthly";
   const nutritionAvg = plan.weekly_nutrition_avg;
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8">
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-heading text-3xl text-[var(--color-ink)] md:text-4xl">
-            {dog.name}&apos;s{" "}
+            {toTitleCase(dog.name)}&apos;s{" "}
             {isMonthly
               ? `Month — Week ${currentWeek}`
               : `Week — ${formatDateRange(plan.start_date, plan.end_date)}`}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-[var(--color-border-strong)] px-3 py-1 text-xs text-[var(--color-ink-soft)]">
+            <span className="rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-3 py-1 text-xs font-medium text-[var(--color-ink)]">
               {cookingModeLabel(plan.cooking_frequency)}
             </span>
-            <span className="text-xs text-[var(--color-ink-soft)]">
+            <span className="text-xs text-[var(--color-ink-500)]">
               {plan.balance_type === "per_meal"
                 ? "Each recipe hits daily targets"
                 : "Nutritionally balanced across the week"}
             </span>
           </div>
           {nutritionAvg && (
-            <p className="mt-3 text-sm text-[var(--color-ink-soft)]">
+            <p className="mt-3 text-sm text-[var(--color-ink-500)]">
               Week average — {nutritionAvg.calories} kcal · {nutritionAvg.protein_g}g protein ·{" "}
               {nutritionAvg.fat_g}g fat · {nutritionAvg.carbs_g}g carbs per day
             </p>
           )}
           {plan.estimated_weekly_cost_gbp != null && (
-            <p className="mt-2 text-sm font-semibold text-[var(--color-accent)]">
+            <p className="mt-2 text-sm font-semibold text-[var(--color-coral)]">
               Est. week cost: £{plan.estimated_weekly_cost_gbp.toFixed(2)} · £{(plan.estimated_weekly_cost_gbp / 7).toFixed(2)}/day
             </p>
           )}
         </div>
         <Link
           href={`/planner/${planId}/shopping`}
-          className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+          className="rounded-full bg-[var(--color-coral)] px-5 py-2.5 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
         >
           Shopping list →
         </Link>
       </div>
 
-      {/* ── Monthly week tabs ── */}
+      {/* Monthly week tabs */}
       {isMonthly && (
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
+        <div className="mb-6 flex gap-1 overflow-x-auto pb-1">
           {Array.from({ length: totalWeeks }).map((_, i) => {
             const w = i + 1;
             const { start, end } = getWeekDays(plan.start_date, w);
@@ -356,8 +367,8 @@ export function PlanView({ planId }: { planId: string }) {
                 onClick={() => setCurrentWeek(w)}
                 className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                   currentWeek === w
-                    ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]"
-                    : "border-[var(--color-border-strong)] text-[var(--color-ink-soft)]"
+                    ? "border-[var(--color-coral)] bg-[var(--color-coral)] text-[var(--color-warm-white)]"
+                    : "border-[var(--color-sand-deep)] bg-[var(--color-sand)] text-[var(--color-ink-500)]"
                 }`}
               >
                 Week {w} {!hasData ? "·" : "✓"}
@@ -367,27 +378,30 @@ export function PlanView({ planId }: { planId: string }) {
         </div>
       )}
 
-      {/* ── Generate week prompt (monthly) ── */}
+      {/* Generate week prompt (monthly) */}
       {isMonthly && !weekGenerated && (
-        <div className="mb-8 rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-10 text-center">
+        <div className="mb-8 rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center shadow-[var(--shadow-card)]">
           <p className="font-heading text-2xl text-[var(--color-ink)]">Week {currentWeek} not generated yet</p>
-          <p className="mt-2 text-[var(--color-ink-soft)]">
+          <p className="mt-2 text-[var(--color-ink-500)]">
             Generate this week&apos;s recipes — we&apos;ll make sure there&apos;s variety across your whole month.
           </p>
           <button
             type="button"
             onClick={handleGenerateWeek}
             disabled={generatingWeek === currentWeek}
-            className={`mt-6 rounded-full bg-[var(--color-accent)] px-7 py-3 text-sm font-semibold text-[var(--color-cream)] ${
+            className={`mt-6 rounded-full bg-[var(--color-coral)] px-7 py-3 text-sm font-semibold text-[var(--color-warm-white)] ${
               generatingWeek === currentWeek ? "animate-pulse" : "transition-transform hover:-translate-y-0.5"
             }`}
           >
             {generatingWeek === currentWeek ? "Generating…" : `Generate week ${currentWeek} →`}
           </button>
+          {swapError && (
+            <p className="text-coral text-sm font-sans mt-2">{swapError}</p>
+          )}
         </div>
       )}
 
-      {/* ── Calendar grid — desktop / list — mobile ── */}
+      {/* Calendar grid — desktop / list — mobile */}
       {weekGenerated && (
         <>
           {/* Desktop 7-column grid */}
@@ -396,41 +410,47 @@ export function PlanView({ planId }: { planId: string }) {
               const rd = day.recipe_data;
               const recipe = rd.recipe;
               const isSwapping = swappingDayId === day.id;
+              const isToday = day.day_date === today;
               return (
                 <div key={day.id} className="flex flex-col">
                   <div
-                    className={`flex flex-1 flex-col rounded-2xl border bg-[var(--color-cream-soft)] p-3 ${
-                      day.is_pinned
-                        ? "border-l-4 border-l-[var(--color-accent)] border-t-[var(--color-border)] border-r-[var(--color-border)] border-b-[var(--color-border)]"
-                        : "border-[var(--color-border)]"
+                    className={`flex flex-1 flex-col rounded-2xl border bg-[var(--color-warm-white)] p-3 ${
+                      isToday
+                        ? "border-2 border-[var(--color-coral)]"
+                        : day.is_pinned
+                        ? "border-l-4 border-[var(--color-sand-deep)]"
+                        : "border-[var(--color-sand-deep)]"
                     }`}
+                    style={day.is_pinned && !isToday ? { borderLeftColor: "var(--color-coral)" } : undefined}
                   >
                     <div className="mb-2 flex items-start justify-between">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-soft)]">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">
                           {rd.day_name.slice(0, 3)}
                         </p>
-                        <p className="mt-0.5 text-xs text-[var(--color-ink-soft)]">
+                        <p className="mt-0.5 text-xs text-[var(--color-ink-300)]">
                           {new Date(day.day_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => void handlePinToggle(day)}
-                        title={day.is_pinned ? "Pinned from your library" : "Pin this recipe"}
-                        className="text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]"
-                      >
-                        {day.is_pinned ? "📌" : "📍"}
-                      </button>
+                      {day.is_pinned && (
+                        <button
+                          type="button"
+                          onClick={() => void handlePinToggle(day)}
+                          title="Pinned — click to unpin"
+                          className="text-[var(--color-ink-300)] hover:text-[var(--color-coral)]"
+                        >
+                          📌
+                        </button>
+                      )}
                     </div>
                     <p className="font-heading text-sm leading-tight text-[var(--color-ink)]">
-                      {recipe.name}
+                      {stripDaySuffix(recipe.name)}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
-                      <span className="rounded-full border border-[var(--color-border)] px-2 py-0.5 text-xs text-[var(--color-ink-soft)]">
+                      <span className="rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-2 py-0.5 text-xs text-[var(--color-ink-500)]">
                         {methodLabel(recipe.method)}
                       </span>
-                      <span className={`rounded-full border px-2 py-0.5 text-xs ${safetyColor(recipe.safety_score)}`}>
+                      <span className={`rounded-full border px-2 py-0.5 text-xs ${safetyBadgeCls(recipe.safety_score)}`}>
                         {recipe.safety_score}
                       </span>
                     </div>
@@ -440,17 +460,17 @@ export function PlanView({ planId }: { planId: string }) {
                           <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Cook today
                         </span>
                       ) : (
-                        <span className="text-[var(--color-ink-soft)]">From batch</span>
+                        <span className="text-[var(--color-ink-300)]">From batch</span>
                       )}
                     </div>
                     {rd.batch_note && (
-                      <p className="mt-1 text-xs italic text-[var(--color-ink-soft)]">{rd.batch_note}</p>
+                      <p className="mt-1 text-xs italic text-[var(--color-ink-300)]">{rd.batch_note}</p>
                     )}
                     {!day.is_pinned && (
                       <button
                         type="button"
                         onClick={() => isSwapping ? (setSwappingDayId(null), setSwapOptions([])) : void handleSwapDay(day)}
-                        className="mt-3 text-xs font-semibold text-[var(--color-accent)] hover:underline"
+                        className="mt-3 text-xs font-semibold text-[var(--color-coral)] hover:underline"
                       >
                         {isSwapping ? "Cancel swap" : "Swap day"}
                       </button>
@@ -460,29 +480,32 @@ export function PlanView({ planId }: { planId: string }) {
                   {/* Swap options */}
                   {isSwapping && (
                     <div className="mt-2 space-y-2">
+                      {swapError && (
+                        <p className="text-coral text-sm font-sans mt-2">{swapError}</p>
+                      )}
                       {swappingLoading ? (
-                        <p className="animate-pulse text-center text-xs text-[var(--color-ink-soft)]">
+                        <p className="animate-pulse text-center text-xs text-[var(--color-ink-500)]">
                           Finding alternatives…
                         </p>
                       ) : (
                         swapOptions.map((opt) => (
                           <div
                             key={opt.option_number}
-                            className="rounded-xl border border-[var(--color-border)] bg-[var(--color-cream)] p-3"
+                            className="rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-3"
                           >
-                            <p className="text-xs font-semibold text-[var(--color-accent)]">
+                            <p className="text-xs font-semibold text-[var(--color-coral)]">
                               Option {opt.option_number}
                             </p>
                             <p className="mt-1 text-xs font-semibold text-[var(--color-ink)]">
-                              {opt.recipe.name}
+                              {stripDaySuffix(opt.recipe.name)}
                             </p>
-                            <p className="text-xs text-[var(--color-ink-soft)]">
+                            <p className="text-xs text-[var(--color-ink-500)]">
                               {methodLabel(opt.recipe.method)} · {opt.recipe.prep_time_mins + opt.recipe.cook_time_mins} min
                             </p>
                             <button
                               type="button"
                               onClick={() => void handleChooseSwap(day, opt.recipe)}
-                              className="mt-2 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold text-[var(--color-cream)]"
+                              className="mt-2 rounded-full bg-[var(--color-coral)] px-3 py-1 text-xs font-semibold text-[var(--color-warm-white)]"
                             >
                               Choose this
                             </button>
@@ -503,12 +526,18 @@ export function PlanView({ planId }: { planId: string }) {
               const recipe = rd.recipe;
               const isExpanded = expandedDayId === day.id;
               const isSwapping = swappingDayId === day.id;
+              const isToday = day.day_date === today;
               return (
                 <div
                   key={day.id}
-                  className={`rounded-2xl border bg-[var(--color-cream-soft)] ${
-                    day.is_pinned ? "border-l-4 border-l-[var(--color-accent)]" : "border-[var(--color-border)]"
+                  className={`rounded-2xl border bg-[var(--color-warm-white)] ${
+                    isToday
+                      ? "border-2 border-[var(--color-coral)]"
+                      : day.is_pinned
+                      ? "border-l-4 border-[var(--color-sand-deep)]"
+                      : "border-[var(--color-sand-deep)]"
                   }`}
+                  style={day.is_pinned && !isToday ? { borderLeftColor: "var(--color-coral)" } : undefined}
                 >
                   <button
                     type="button"
@@ -516,26 +545,26 @@ export function PlanView({ planId }: { planId: string }) {
                     className="flex w-full items-center justify-between px-5 py-4 text-left"
                   >
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-soft)]">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">
                         {rd.day_name}
                       </p>
                       <p className="mt-0.5 font-heading text-lg text-[var(--color-ink)]">
-                        {recipe.name}
+                        {stripDaySuffix(recipe.name)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       {rd.cook_on_day && <span className="h-2 w-2 rounded-full bg-green-500" />}
-                      <span className="text-xs text-[var(--color-ink-soft)]">{isExpanded ? "▲" : "▼"}</span>
+                      <span className="text-xs text-[var(--color-ink-300)]">{isExpanded ? "▲" : "▼"}</span>
                     </div>
                   </button>
 
                   {isExpanded && (
-                    <div className="border-t border-[var(--color-border)] px-5 pb-5 pt-4">
+                    <div className="border-t border-[var(--color-sand-deep)] px-5 pb-5 pt-4">
                       <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-ink-soft)]">
+                        <span className="rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-3 py-1 text-xs text-[var(--color-ink-500)]">
                           {methodLabel(recipe.method)}
                         </span>
-                        <span className={`rounded-full border px-3 py-1 text-xs ${safetyColor(recipe.safety_score)}`}>
+                        <span className={`rounded-full border px-3 py-1 text-xs ${safetyBadgeCls(recipe.safety_score)}`}>
                           Safety {recipe.safety_score}
                         </span>
                       </div>
@@ -544,56 +573,60 @@ export function PlanView({ planId }: { planId: string }) {
                           <span className="h-2 w-2 rounded-full bg-green-500" /> Cook today
                         </p>
                       ) : (
-                        <p className="mt-3 text-sm text-[var(--color-ink-soft)]">From batch</p>
+                        <p className="mt-3 text-sm text-[var(--color-ink-500)]">From batch</p>
                       )}
                       {rd.batch_note && (
-                        <p className="mt-1 text-sm italic text-[var(--color-ink-soft)]">{rd.batch_note}</p>
+                        <p className="mt-1 text-sm italic text-[var(--color-ink-500)]">{rd.batch_note}</p>
                       )}
                       <div className="mt-4 space-y-1.5">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-soft)]">Ingredients</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">Ingredients</p>
                         {recipe.ingredients.map((ing) => (
                           <p key={ing.name} className="text-sm text-[var(--color-ink)]">
-                            {ing.name} — {ing.grams}g
+                            {ing.name} — <span className="font-medium text-[var(--color-coral)]">{ing.grams}g</span>
                           </p>
                         ))}
                       </div>
-                      <div className="mt-4 space-y-1.5">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-soft)]">Instructions</p>
+                      <div className="mt-4 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">Instructions</p>
                         {recipe.instructions.map((step, i) => (
-                          <p key={i} className="text-sm text-[var(--color-ink)]">
-                            {i + 1}. {step}
-                          </p>
+                          <div key={i} className="flex gap-3">
+                            <span className="shrink-0 font-heading text-xl font-semibold leading-none text-[var(--color-coral)]/30">{i + 1}</span>
+                            <span className="text-sm text-[var(--color-ink)]">{step}</span>
+                          </div>
                         ))}
                       </div>
-                      <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-cream)] px-4 py-3 text-xs text-[var(--color-ink-soft)]">
+                      <div className="mt-4 rounded-xl bg-[var(--color-sand)] px-4 py-3 text-xs text-[var(--color-ink-500)]">
                         {recipe.nutrition_per_day.calories} kcal · {recipe.nutrition_per_day.protein_g}g protein · {recipe.nutrition_per_day.fat_g}g fat · {recipe.nutrition_per_day.carbs_g}g carbs
                       </div>
                       {!day.is_pinned && (
                         <button
                           type="button"
                           onClick={() => isSwapping ? (setSwappingDayId(null), setSwapOptions([])) : void handleSwapDay(day)}
-                          className="mt-4 text-sm font-semibold text-[var(--color-accent)] hover:underline"
+                          className="mt-4 text-sm font-semibold text-[var(--color-coral)] hover:underline"
                         >
                           {isSwapping ? "Cancel swap" : "Swap day"}
                         </button>
                       )}
                       {isSwapping && (
                         <div className="mt-3 space-y-3">
+                          {swapError && (
+                            <p className="text-coral text-sm font-sans mt-2">{swapError}</p>
+                          )}
                           {swappingLoading ? (
-                            <p className="animate-pulse text-sm text-[var(--color-ink-soft)]">Finding alternatives…</p>
+                            <p className="animate-pulse text-sm text-[var(--color-ink-500)]">Finding alternatives…</p>
                           ) : (
                             swapOptions.map((opt) => (
-                              <div key={opt.option_number} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-cream)] p-4">
-                                <p className="text-xs font-semibold text-[var(--color-accent)]">Option {opt.option_number}</p>
-                                <p className="mt-1 font-semibold text-[var(--color-ink)]">{opt.recipe.name}</p>
-                                <p className="text-sm text-[var(--color-ink-soft)]">{opt.recipe.tagline}</p>
-                                <p className="text-xs text-[var(--color-ink-soft)]">
+                              <div key={opt.option_number} className="rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-4">
+                                <p className="text-xs font-semibold text-[var(--color-coral)]">Option {opt.option_number}</p>
+                                <p className="mt-1 font-semibold text-[var(--color-ink)]">{stripDaySuffix(opt.recipe.name)}</p>
+                                <p className="text-sm text-[var(--color-ink-500)]">{opt.recipe.tagline}</p>
+                                <p className="text-xs text-[var(--color-ink-500)]">
                                   {methodLabel(opt.recipe.method)} · {opt.recipe.prep_time_mins + opt.recipe.cook_time_mins} min
                                 </p>
                                 <button
                                   type="button"
                                   onClick={() => void handleChooseSwap(day, opt.recipe)}
-                                  className="mt-3 rounded-full bg-[var(--color-accent)] px-4 py-1.5 text-sm font-semibold text-[var(--color-cream)]"
+                                  className="mt-3 rounded-full bg-[var(--color-coral)] px-4 py-1.5 text-sm font-semibold text-[var(--color-warm-white)]"
                                 >
                                   Choose this
                                 </button>
@@ -614,7 +647,7 @@ export function PlanView({ planId }: { planId: string }) {
       <div className="mt-8 flex gap-3">
         <Link
           href="/planner"
-          className="rounded-full border border-[var(--color-border-strong)] px-5 py-2 text-sm font-semibold text-[var(--color-ink)]"
+          className="rounded-full border border-[var(--color-sand-deep)] px-5 py-2 text-sm font-semibold text-[var(--color-ink)]"
         >
           ← All plans
         </Link>

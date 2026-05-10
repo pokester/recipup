@@ -1,4 +1,5 @@
 import { SiteHeader } from "@/components/layout/site-header";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 type SiteLayoutProps = {
   children: React.ReactNode;
@@ -6,9 +7,10 @@ type SiteLayoutProps = {
 
 export function SiteLayout({ children }: SiteLayoutProps) {
   return (
-    <div className="min-h-screen bg-[var(--color-cream)] text-[var(--color-ink)]">
+    <div className="flex min-h-screen flex-col bg-[var(--color-cream)] text-[var(--color-ink)]">
       <SiteHeader />
-      <main>{children}</main>
+      <main className="flex-1">{children}</main>
+      <SiteFooter />
     </div>
   );
 }

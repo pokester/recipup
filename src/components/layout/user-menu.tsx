@@ -43,7 +43,7 @@ export function UserMenu({ user }: { user: User }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-accent)] text-sm font-semibold text-[var(--color-cream)] transition-opacity hover:opacity-80"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-coral)] font-serif text-sm font-semibold text-[var(--color-warm-white)] transition-opacity hover:opacity-80"
         aria-label="Account menu"
       >
         {user.user_metadata?.avatar_url ? (
@@ -59,7 +59,7 @@ export function UserMenu({ user }: { user: User }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-30 w-52 rounded-2xl border border-[var(--color-border)] bg-[var(--color-cream)] py-2 shadow-lg">
+        <div className="absolute right-0 top-11 z-30 min-w-[200px] rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] py-2 shadow-lg">
           <div className="border-b border-[var(--color-border)] px-4 pb-2">
             <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
               {(user.user_metadata?.full_name as string) || user.email}
@@ -71,31 +71,17 @@ export function UserMenu({ user }: { user: User }) {
 
           <nav className="pt-1">
             <Link
-              href="/dogs"
-              onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm text-[var(--color-ink)] hover:bg-[var(--color-cream-soft)]"
-            >
-              My dogs →
-            </Link>
-            <Link
-              href="/pantry"
-              onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm text-[var(--color-ink)] hover:bg-[var(--color-cream-soft)]"
-            >
-              My kitchen →
-            </Link>
-            <Link
               href="/account"
               onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm text-[var(--color-ink)] hover:bg-[var(--color-cream-soft)]"
+              className="block px-4 py-2 text-sm text-[var(--color-ink)] hover:bg-[var(--color-sand)]"
             >
-              Account →
+              Account
             </Link>
             <div className="my-1 border-t border-[var(--color-border)]" />
             <button
               type="button"
               onClick={handleSignOut}
-              className="block w-full px-4 py-2 text-left text-sm text-[var(--color-ink-soft)] hover:bg-[var(--color-cream-soft)]"
+              className="block w-full px-4 py-2 text-left text-sm text-[var(--color-ink-soft)] hover:bg-[var(--color-sand)]"
             >
               Sign out
             </button>

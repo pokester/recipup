@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   LineChart,
@@ -113,6 +113,11 @@ function capitalize(s: string | null) {
   return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
 }
 
+function toTitleCase(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+}
+
 export function DogHubClient({
   dog,
   healthLogs,
@@ -122,20 +127,20 @@ export function DogHubClient({
   hasHealthAccess,
   latestLogResponse,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    if (typeof window === "undefined") return "overview";
+    const hash = window.location.hash.replace("#", "") as TabId;
+    return TABS.some((t) => t.id === hash) ? hash : "overview";
+  });
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [rangeWeeks, setRangeWeeks] = useState<number | null>(12);
-
-  useEffect(() => {
-    const hash = window.location.hash.replace("#", "") as TabId;
-    if (TABS.some((t) => t.id === hash)) setActiveTab(hash);
-  }, []);
 
   const switchTab = (tab: TabId) => {
     setActiveTab(tab);
     history.replaceState(null, "", `#${tab}`);
   };
 
+  const displayName = toTitleCase(dog.name);
   const latestLog = healthLogs[0] ?? null;
   const prevLog = healthLogs[1] ?? null;
   const weightChange =
@@ -169,17 +174,18 @@ export function DogHubClient({
       {/* Latest log response card */}
       {latestLogResponse && (
         <div
-          className={`mb-6 rounded-2xl border-l-4 px-6 py-5 ${
+          className={`mb-6 rounded-2xl border px-6 py-5 ${
             latestLogResponse.vet_flag
-              ? "border-l-amber-500 bg-amber-50 border border-amber-300"
-              : "border-l-[var(--color-accent)] bg-[var(--color-cream-soft)] border border-[var(--color-border)]"
+              ? "border-amber-300 border-l-4 border-l-amber-500 bg-amber-50"
+              : "border-[var(--color-sand-deep)] border-l-4 bg-[var(--color-sand)]"
           }`}
+          style={latestLogResponse.vet_flag ? undefined : { borderLeftColor: "var(--color-coral)" }}
         >
           <p className="font-semibold text-[var(--color-ink)]">
             {latestLogResponse.vet_flag ? "⚠️ " : ""}
-            {dog.name} · Week of {formatDate(latestLogResponse.week_start)}
+            {displayName} · Week of {formatDate(latestLogResponse.week_start)}
           </p>
-          <p className="mt-2 text-sm text-[var(--color-ink-soft)]">{latestLogResponse.response_message}</p>
+          <p className="mt-2 text-sm text-[var(--color-ink-500)]">{latestLogResponse.response_message}</p>
           {latestLogResponse.vet_flag && latestLogResponse.vet_message && (
             <p className="mt-3 rounded-xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900">
               {latestLogResponse.vet_message}
@@ -188,17 +194,17 @@ export function DogHubClient({
         </div>
       )}
 
-      {/* Tab bar */}
-      <div className="mb-8 flex gap-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-1">
+      {/* Tab bar — underline style */}
+      <div className="mb-8 flex border-b border-[var(--color-sand-deep)]">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => switchTab(tab.id)}
-            className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+            className={`-mb-px border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
               activeTab === tab.id
-                ? "bg-[var(--color-accent)] text-[var(--color-cream)]"
-                : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+                ? "border-[var(--color-coral)] text-[var(--color-coral)]"
+                : "border-transparent text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
             }`}
           >
             {tab.label}
@@ -210,12 +216,12 @@ export function DogHubClient({
       {activeTab === "overview" && (
         <div className="space-y-6">
           {/* Health snapshot */}
-          <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
+          <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
             <div className="flex items-center justify-between gap-4">
               <h2 className="font-heading text-xl text-[var(--color-ink)]">Latest health snapshot</h2>
               <Link
                 href={`/dogs/${dog.id}/log`}
-                className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+                className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
               >
                 Log this week →
               </Link>
@@ -223,13 +229,13 @@ export function DogHubClient({
             {latestLog ? (
               <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">Weight</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-500)]">Weight</p>
                   <p className="mt-1 font-semibold text-[var(--color-ink)]">
                     {latestLog.weight_kg != null ? `${latestLog.weight_kg}kg` : "—"}
                     {weightChange !== null && (
                       <span
                         className={`ml-1 text-xs ${
-                          weightChange > 0 ? "text-amber-600" : weightChange < 0 ? "text-blue-600" : "text-[var(--color-ink-soft)]"
+                          weightChange > 0 ? "text-amber-600" : weightChange < 0 ? "text-blue-600" : "text-[var(--color-ink-500)]"
                         }`}
                       >
                         {weightChange > 0 ? `↑${weightChange.toFixed(1)}` : weightChange < 0 ? `↓${Math.abs(weightChange).toFixed(1)}` : "→"}
@@ -238,31 +244,31 @@ export function DogHubClient({
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">Energy</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-500)]">Energy</p>
                   <p className="mt-1 font-semibold text-[var(--color-ink)]">
                     {latestLog.energy_level === "low" ? "😴 Low" : latestLog.energy_level === "high" ? "⚡ High" : latestLog.energy_level === "normal" ? "😊 Normal" : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">Coat</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-500)]">Coat</p>
                   <p className="mt-1 font-semibold text-[var(--color-ink)]">
                     {latestLog.coat_score != null ? `${latestLog.coat_score}/5` : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">Appetite</p>
-                  <p className="mt-1 font-semibold text-[var(--color-ink)] capitalize">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-500)]">Appetite</p>
+                  <p className="mt-1 font-semibold capitalize text-[var(--color-ink)]">
                     {latestLog.appetite ?? "—"}
                   </p>
                 </div>
-                <p className="col-span-2 text-xs text-[var(--color-ink-soft)] md:col-span-4">
+                <p className="col-span-2 text-xs text-[var(--color-ink-300)] md:col-span-4">
                   Last logged {daysAgo(latestLog.week_start)}
                 </p>
               </div>
             ) : (
               <div className="mt-4">
-                <p className="text-[var(--color-ink-soft)]">
-                  No health logs yet. Start tracking {dog.name}&apos;s health to see trends build over time.
+                <p className="text-[var(--color-ink-500)]">
+                  No health logs yet. Start tracking {displayName}&apos;s health to see trends build over time.
                 </p>
               </div>
             )}
@@ -270,14 +276,14 @@ export function DogHubClient({
 
           {/* Active plan */}
           {activePlan && (
-            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
+            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
               <h2 className="font-heading text-xl text-[var(--color-ink)]">Current meal plan</h2>
-              <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+              <p className="mt-1 text-sm text-[var(--color-ink-500)]">
                 {formatDate(activePlan.start_date)} – {formatDate(activePlan.end_date)}
               </p>
               <Link
                 href={`/planner/${activePlan.id}`}
-                className="mt-4 inline-block rounded-full border border-[var(--color-border-strong)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)]"
+                className="mt-4 inline-block rounded-full border border-[var(--color-sand-deep)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)]"
               >
                 View plan →
               </Link>
@@ -286,15 +292,15 @@ export function DogHubClient({
 
           {/* Latest recipe */}
           {savedRecipes[0] && (
-            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
+            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
               <h2 className="font-heading text-xl text-[var(--color-ink)]">Latest saved recipe</h2>
               <p className="mt-1 font-semibold text-[var(--color-ink)]">
                 {savedRecipes[0].recipe_data.name ?? "Untitled"}
               </p>
-              <p className="text-xs text-[var(--color-ink-soft)]">Saved {daysAgo(savedRecipes[0].saved_at)}</p>
+              <p className="text-xs text-[var(--color-ink-500)]">Saved {daysAgo(savedRecipes[0].saved_at)}</p>
               <Link
                 href="/library"
-                className="mt-4 inline-block text-sm font-semibold text-[var(--color-accent)] hover:underline"
+                className="mt-4 inline-block text-sm font-semibold text-[var(--color-coral)] hover:underline"
               >
                 View saved recipes →
               </Link>
@@ -309,45 +315,45 @@ export function DogHubClient({
           <div className="flex items-center justify-between gap-4">
             <Link
               href={`/dogs/${dog.id}/log`}
-              className="rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+              className="rounded-full bg-[var(--color-coral)] px-5 py-2.5 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
             >
               Log this week →
             </Link>
           </div>
 
           {!hasHealthAccess ? (
-            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-10 text-center">
+            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
               <p className="font-heading text-2xl text-[var(--color-ink)]">Health tracking is a Pack Pro feature</p>
-              <p className="mt-3 max-w-md mx-auto text-[var(--color-ink-soft)]">
-                Upgrade to track {dog.name}&apos;s progress and let us adjust recipes based on how they&apos;re doing week by week.
+              <p className="mt-3 mx-auto max-w-md text-[var(--color-ink-500)]">
+                Upgrade to track {displayName}&apos;s progress and let us adjust recipes based on how they&apos;re doing week by week.
               </p>
               <Link
                 href="/pricing"
-                className="mt-6 inline-block rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+                className="mt-6 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
               >
                 See plans →
               </Link>
             </div>
           ) : healthLogs.length === 0 ? (
-            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-10 text-center">
+            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
               <p className="font-heading text-2xl text-[var(--color-ink)]">No health logs yet</p>
-              <p className="mt-2 text-[var(--color-ink-soft)]">
-                Log {dog.name}&apos;s first week to start tracking trends.
+              <p className="mt-2 text-[var(--color-ink-500)]">
+                Log {displayName}&apos;s first week to start tracking trends.
               </p>
             </div>
           ) : (
             <>
               {/* Range selector */}
-              <div className="flex gap-2">
+              <div className="flex gap-1 rounded-full bg-[var(--color-sand)] p-0.5 self-start">
                 {RANGE_OPTIONS.map((opt) => (
                   <button
                     key={opt.label}
                     type="button"
                     onClick={() => setRangeWeeks(opt.weeks)}
-                    className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
                       rangeWeeks === opt.weeks
-                        ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]"
-                        : "border-[var(--color-border-strong)] text-[var(--color-ink)]"
+                        ? "bg-[var(--color-warm-white)] shadow-sm text-[var(--color-ink)]"
+                        : "text-[var(--color-ink-500)]"
                     }`}
                   >
                     {opt.label}
@@ -356,59 +362,62 @@ export function DogHubClient({
               </div>
 
               {/* Weight chart */}
-              <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
+              <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
                 <p className="mb-4 font-semibold text-[var(--color-ink)]">Weight (kg)</p>
                 <ResponsiveContainer width="100%" height={180}>
                   <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 10, fill: "#9A7B6A" }}
+                      tick={{ fontSize: 10, fill: "var(--color-ink-300)" }}
                       tickFormatter={(v: string) => new Date(v).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                     />
-                    <YAxis tick={{ fontSize: 10, fill: "#9A7B6A" }} domain={["auto", "auto"]} width={32} />
+                    <YAxis tick={{ fontSize: 10, fill: "var(--color-ink-300)" }} domain={["auto", "auto"]} width={32} />
                     <Tooltip
-                      contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid #E9D7C5" }}
+                      contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid var(--color-sand-deep)" }}
                       labelFormatter={(v: unknown) => new Date(String(v)).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                     />
                     {dog.goal === "lose_weight" || dog.goal === "gain_weight" ? (
-                      <ReferenceLine y={dog.weight_kg ?? undefined} stroke="#C97D4E" strokeDasharray="4 4" />
+                      <ReferenceLine y={dog.weight_kg ?? undefined} stroke="var(--color-coral)" strokeDasharray="4 4" />
                     ) : null}
-                    <Line type="monotone" dataKey="weight" stroke="#C97D4E" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                    <Line type="monotone" dataKey="weight" stroke="var(--color-coral)" strokeWidth={2} dot={{ r: 3 }} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
 
               {/* Coat score chart */}
-              <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
+              <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
                 <p className="mb-4 font-semibold text-[var(--color-ink)]">Coat score (1–5)</p>
                 <ResponsiveContainer width="100%" height={160}>
                   <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 10, fill: "#9A7B6A" }}
+                      tick={{ fontSize: 10, fill: "var(--color-ink-300)" }}
                       tickFormatter={(v: string) => new Date(v).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                     />
-                    <YAxis tick={{ fontSize: 10, fill: "#9A7B6A" }} domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} width={24} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid #E9D7C5" }} />
-                    <ReferenceLine y={3} stroke="#D4B49A" strokeDasharray="4 4" />
-                    <Line type="monotone" dataKey="coat" stroke="#C97D4E" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                    <YAxis tick={{ fontSize: 10, fill: "var(--color-ink-300)" }} domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} width={24} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid var(--color-sand-deep)" }} />
+                    <ReferenceLine y={3} stroke="var(--color-sand-deep)" strokeDasharray="4 4" />
+                    <Line type="monotone" dataKey="coat" stroke="var(--color-coral)" strokeWidth={2} dot={{ r: 3 }} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
 
               {/* Energy & appetite chart */}
-              <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
-                <p className="mb-1 font-semibold text-[var(--color-ink)]">Energy &amp; appetite</p>
-                <p className="mb-4 text-xs text-[var(--color-ink-soft)]">Energy: 1=Low 2=Normal 3=High · Appetite: 1=Refusing 2=Reduced 3=Normal 4=Enthusiastic</p>
+              <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
+                <p className="mb-2 font-semibold text-[var(--color-ink)]">Energy &amp; appetite</p>
+                <div className="mb-4 flex items-center gap-5 text-xs text-[var(--color-ink-500)]">
+                  <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-[var(--color-coral)]" /> Energy</span>
+                  <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-[var(--color-sand-deep)]" /> Appetite</span>
+                </div>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 10, fill: "#9A7B6A" }}
+                      tick={{ fontSize: 10, fill: "var(--color-ink-300)" }}
                       tickFormatter={(v: string) => new Date(v).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                     />
-                    <YAxis tick={{ fontSize: 10, fill: "#9A7B6A" }} domain={[0, 4]} width={24} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid #E9D7C5" }} />
+                    <YAxis tick={{ fontSize: 10, fill: "var(--color-ink-300)" }} domain={[0, 4]} width={24} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid var(--color-sand-deep)" }} />
                     <Bar dataKey="energy" fill="#C97D4E" radius={[4, 4, 0, 0]} maxBarSize={20} />
                     <Bar dataKey="appetite" fill="#E9D7C5" radius={[4, 4, 0, 0]} maxBarSize={20} />
                   </BarChart>
@@ -423,8 +432,8 @@ export function DogHubClient({
                   { label: "Weeks tracked", value: String(healthLogs.length) },
                   { label: "Adjustments made", value: String(totalAdjustments) },
                 ].map((stat) => (
-                  <div key={stat.label} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-4">
-                    <p className="text-xs text-[var(--color-ink-soft)]">{stat.label}</p>
+                  <div key={stat.label} className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-4">
+                    <p className="text-xs text-[var(--color-ink-500)]">{stat.label}</p>
                     <p className="mt-1 font-heading text-2xl text-[var(--color-ink)]">{stat.value}</p>
                   </div>
                 ))}
@@ -437,7 +446,7 @@ export function DogHubClient({
                   {healthLogs.map((log) => (
                     <div
                       key={log.id}
-                      className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] px-5 py-4"
+                      className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-5 py-4"
                     >
                       <button
                         type="button"
@@ -446,32 +455,32 @@ export function DogHubClient({
                       >
                         <div>
                           <p className="font-semibold text-[var(--color-ink)]">Week of {formatDate(log.week_start)}</p>
-                          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                          <p className="mt-1 text-sm text-[var(--color-ink-500)]">
                             {log.weight_kg != null ? `Weight: ${log.weight_kg}kg · ` : ""}
                             {log.energy_level ? `Energy: ${capitalize(log.energy_level)} · ` : ""}
                             {log.coat_score != null ? `Coat: ${log.coat_score}/5 · ` : ""}
                             {log.appetite ? `Appetite: ${capitalize(log.appetite)}` : ""}
                           </p>
                           {log.recipe_adjustments?.length > 0 && (
-                            <p className="mt-1 text-xs font-semibold text-[var(--color-accent)]">
+                            <p className="mt-1 text-xs font-semibold text-[var(--color-coral)]">
                               {log.recipe_adjustments.length} recipe adjustment{log.recipe_adjustments.length !== 1 ? "s" : ""} made this week
                             </p>
                           )}
                         </div>
-                        <span className="shrink-0 text-[var(--color-ink-soft)]">{expandedLog === log.id ? "▲" : "▼"}</span>
+                        <span className="shrink-0 text-[var(--color-ink-300)]">{expandedLog === log.id ? "▲" : "▼"}</span>
                       </button>
 
                       {expandedLog === log.id && (
-                        <div className="mt-4 border-t border-[var(--color-border)] pt-4 space-y-2 text-sm text-[var(--color-ink-soft)]">
+                        <div className="mt-4 space-y-2 border-t border-[var(--color-sand-deep)] pt-4 text-sm text-[var(--color-ink-500)]">
                           {log.itching && <p>Itching: {capitalize(log.itching)}</p>}
                           {log.joint_stiffness && <p>Joint stiffness: {capitalize(log.joint_stiffness)}</p>}
                           {log.digestion && <p>Digestion: {capitalize(log.digestion)}</p>}
                           {log.vomiting && <p>Vomiting: {capitalize(log.vomiting)}</p>}
                           {log.notes && <p className="italic">{log.notes}</p>}
                           {log.response_message && (
-                            <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${log.vet_flag ? "bg-amber-50 border border-amber-200" : "bg-[#FFF9F4] border border-[var(--color-border)]"}`}>
+                            <div className={`mt-3 rounded-xl border px-4 py-3 text-sm ${log.vet_flag ? "border-amber-200 bg-amber-50" : "border-[var(--color-sand-deep)] bg-[var(--color-sand)]"}`}>
                               {log.vet_flag && <p className="mb-1 font-semibold text-amber-900">⚠️ {log.vet_message}</p>}
-                              <p className="text-[var(--color-ink-soft)]">{log.response_message}</p>
+                              <p className="text-[var(--color-ink-500)]">{log.response_message}</p>
                             </div>
                           )}
                         </div>
@@ -489,10 +498,10 @@ export function DogHubClient({
       {activeTab === "recipes" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="font-heading text-xl text-[var(--color-ink)]">Saved recipes for {dog.name}</h2>
+            <h2 className="font-heading text-xl text-[var(--color-ink)]">Saved recipes for {displayName}</h2>
             <Link
               href={`/onboard?dog_id=${dog.id}`}
-              className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+              className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
             >
               Generate new recipes →
             </Link>
@@ -510,26 +519,26 @@ export function DogHubClient({
                         ? "Oven"
                         : null;
                 return (
-                  <div key={item.id} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] px-5 py-4">
+                  <div key={item.id} className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-5 py-4">
                     <p className="font-heading text-lg text-[var(--color-ink)]">{item.recipe_data.name ?? "Untitled"}</p>
-                    {item.recipe_data.tagline && <p className="mt-0.5 text-sm italic text-[var(--color-ink-soft)]">{item.recipe_data.tagline}</p>}
+                    {item.recipe_data.tagline && <p className="mt-0.5 text-sm italic text-[var(--color-ink-500)]">{item.recipe_data.tagline}</p>}
                     <div className="mt-2 flex gap-2">
                       {methodLabel && (
-                        <span className="rounded-full border border-[var(--color-border)] px-3 py-0.5 text-xs text-[var(--color-ink-soft)]">{methodLabel}</span>
+                        <span className="rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-3 py-0.5 text-xs text-[var(--color-ink)]">{methodLabel}</span>
                       )}
-                      <span className="text-xs text-[var(--color-ink-soft)]">Saved {daysAgo(item.saved_at)}</span>
+                      <span className="text-xs text-[var(--color-ink-300)]">Saved {daysAgo(item.saved_at)}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-10 text-center">
-              <p className="font-heading text-xl text-[var(--color-ink)]">No saved recipes yet for {dog.name}.</p>
-              <p className="mt-2 text-[var(--color-ink-soft)]">Generate a recipe plan to get started.</p>
+            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
+              <p className="font-heading text-xl text-[var(--color-ink)]">No saved recipes yet for {displayName}.</p>
+              <p className="mt-2 text-[var(--color-ink-500)]">Generate a recipe plan to get started.</p>
               <Link
                 href={`/onboard?dog_id=${dog.id}`}
-                className="mt-6 inline-block rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+                className="mt-6 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
               >
                 Generate recipes →
               </Link>
@@ -542,10 +551,10 @@ export function DogHubClient({
       {activeTab === "plans" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="font-heading text-xl text-[var(--color-ink)]">Meal plans for {dog.name}</h2>
+            <h2 className="font-heading text-xl text-[var(--color-ink)]">Meal plans for {displayName}</h2>
             <Link
               href={`/planner/new?dog_id=${dog.id}`}
-              className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+              className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
             >
               Create new plan →
             </Link>
@@ -556,7 +565,7 @@ export function DogHubClient({
               {allPlans.map((plan) => {
                 const isActive = plan.status === "active";
                 return (
-                  <div key={plan.id} className={`rounded-2xl border px-5 py-4 ${isActive ? "border-[var(--color-accent)] bg-[var(--color-cream-soft)]" : "border-[var(--color-border)] bg-[var(--color-cream-soft)]"}`}>
+                  <div key={plan.id} className={`rounded-2xl border px-5 py-4 ${isActive ? "border-[var(--color-coral)] bg-[var(--color-warm-white)]" : "border-[var(--color-sand-deep)] bg-[var(--color-warm-white)]"}`}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">
@@ -565,13 +574,13 @@ export function DogHubClient({
                             {formatDate(plan.start_date)} – {formatDate(plan.end_date)}
                           </p>
                         </div>
-                        <p className="mt-1 text-sm capitalize text-[var(--color-ink-soft)]">
+                        <p className="mt-1 text-sm capitalize text-[var(--color-ink-500)]">
                           {plan.cooking_frequency.replace(/_/g, " ")} · {capitalize(plan.status)}
                         </p>
                       </div>
                       <Link
                         href={`/planner/${plan.id}`}
-                        className="shrink-0 rounded-full border border-[var(--color-border-strong)] px-4 py-1.5 text-sm font-semibold text-[var(--color-ink)]"
+                        className="shrink-0 rounded-full border border-[var(--color-sand-deep)] px-4 py-1.5 text-sm font-semibold text-[var(--color-ink)]"
                       >
                         View plan →
                       </Link>
@@ -581,11 +590,11 @@ export function DogHubClient({
               })}
             </div>
           ) : (
-            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-10 text-center">
-              <p className="font-heading text-xl text-[var(--color-ink)]">No meal plans yet for {dog.name}.</p>
+            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
+              <p className="font-heading text-xl text-[var(--color-ink)]">No meal plans yet for {displayName}.</p>
               <Link
                 href={`/planner/new?dog_id=${dog.id}`}
-                className="mt-6 inline-block rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+                className="mt-6 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
               >
                 Create a plan →
               </Link>

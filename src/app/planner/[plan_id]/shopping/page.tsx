@@ -37,6 +37,11 @@ type AggregatedIngredient = {
   days: string[];
 };
 
+function toTitleCase(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+}
+
 function aggregateIngredients(days: MealPlanDay[]): AggregatedIngredient[] {
   const map = new Map<string, AggregatedIngredient>();
   for (const day of days) {
@@ -76,7 +81,7 @@ export default async function ShoppingPage({ params }: { params: Promise<{ plan_
   const { data: profile } = await supabase
     .from("profiles")
     .select("subscription_tier, trial_ends_at, market")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .single();
 
   const inTrial = profile?.trial_ends_at
@@ -90,7 +95,7 @@ export default async function ShoppingPage({ params }: { params: Promise<{ plan_
   const market = ((profile as Record<string, unknown> | null)?.market as "uk" | "nl") ?? "uk";
   const currency = market === "nl" ? "€" : "£";
 
-  const [{ data: plan }, { data: daysData }, { data: dogData }] = await Promise.all([
+  const [{ data: plan }, { data: daysData }] = await Promise.all([
     supabase
       .from("meal_plans")
       .select("id, start_date, end_date, dog_id, dogs(name, weight_kg)")
@@ -102,11 +107,6 @@ export default async function ShoppingPage({ params }: { params: Promise<{ plan_
       .select("id, day_date, day_number, recipe_data")
       .eq("plan_id", plan_id)
       .order("day_date", { ascending: true }),
-    supabase
-      .from("dogs")
-      .select("weight_kg, current_food_spend_monthly")
-      .eq("id", (await supabase.from("meal_plans").select("dog_id").eq("id", plan_id).single()).data?.dog_id ?? "")
-      .maybeSingle(),
   ]);
 
   if (!plan) redirect("/planner");
@@ -116,18 +116,16 @@ export default async function ShoppingPage({ params }: { params: Promise<{ plan_
 
   type PlanRow = { id: string; start_date: string; end_date: string; dog_id: string; dogs: { name: string; weight_kg: number | null } | null };
   const typedPlan = plan as unknown as PlanRow;
-  const dogName = typedPlan.dogs?.name ?? "Your dog";
-  const dogWeight = typedPlan.dogs?.weight_kg ?? (dogData as { weight_kg: number | null } | null)?.weight_kg ?? 20;
+  const dogName = toTitleCase(typedPlan.dogs?.name) || "Your dog";
+  const dogWeight = typedPlan.dogs?.weight_kg ?? 20;
 
   const startDate = new Date(typedPlan.start_date);
   const endDate = new Date(typedPlan.end_date);
   const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
   const dateRange = `${startDate.toLocaleDateString("en-GB", opts)} – ${endDate.toLocaleDateString("en-GB", { ...opts, year: "numeric" })}`;
 
-  // Calculate total week cost from all day recipes
   let weekCostTotal = 0;
   let hasCostData = false;
-  let priceSyncDate: string | null = null;
 
   if (days.length > 0) {
     try {
@@ -139,97 +137,113 @@ export default async function ShoppingPage({ params }: { params: Promise<{ plan_
               serves_days: day.recipe_data.recipe.serves_days ?? 1,
             },
             market,
-            1, // per day
+            1,
           ),
         ),
       );
       weekCostTotal = costs.reduce((sum, c) => sum + c.cost_per_day, 0);
       hasCostData = weekCostTotal > 0;
-      const syncDates = costs.map((c) => c.price_sync_date).filter(Boolean) as string[];
-      if (syncDates.length > 0) priceSyncDate = syncDates.sort().at(-1) ?? null;
     } catch {
       // Non-critical — cost section won't show
     }
   }
 
-  const syncDateLabel = priceSyncDate
-    ? new Date(priceSyncDate).toLocaleDateString("en-GB", { month: "long", year: "numeric" })
-    : null;
-
   const competitors = hasCostData ? compareToCompetitors(weekCostTotal / 7, dogWeight, market) : null;
-  const butternut = competitors?.find((c) => c.brand === "Butternut Box");
+  const deliveryComp = competitors?.find((c) => c.brand === "Butternut Box") ?? competitors?.[0] ?? null;
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10 md:px-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-3xl text-[var(--color-ink)]">{dogName}&apos;s shopping list</h1>
-          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-            {dogName} · {dateRange}
-          </p>
+    <div className="mx-auto max-w-3xl px-6">
+      {/* Page header */}
+      <div className="pt-10 pb-8">
+        <h1 className="font-heading text-3xl text-[var(--color-ink)]">{dogName}&apos;s shopping list</h1>
+        <p className="mt-1 text-sm text-[var(--color-ink-500)]">{dateRange}</p>
+
+        <div className="mt-4 flex flex-wrap items-center gap-4">
           {hasCostData && (
-            <p className="mt-1 text-sm font-semibold text-[var(--color-accent)]">
-              Estimated week: {currency}{weekCostTotal.toFixed(2)}
-            </p>
+            <span className="rounded-full bg-[var(--color-coral)]/10 px-4 py-2 text-sm font-medium text-[var(--color-coral)]">
+              Est. {currency}{weekCostTotal.toFixed(2)} for the week
+            </span>
           )}
+          <Link
+            href={`/planner/${plan_id}`}
+            className="text-sm font-medium text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
+          >
+            ← View plan
+          </Link>
         </div>
-        <Link href={`/planner/${plan_id}`} className="rounded-full border border-[var(--color-border-strong)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)]">
-          ← View plan
-        </Link>
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-10 text-center">
+        <div className="py-16 text-center">
           <p className="text-4xl">🛒</p>
           <p className="mt-4 font-heading text-2xl text-[var(--color-ink)]">Nothing to buy</p>
-          <p className="mt-2 text-[var(--color-ink-soft)]">All ingredients are already in your pantry.</p>
+          <p className="mt-2 text-[var(--color-ink-500)]">All ingredients are already in your pantry.</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {items.map((item) => (
-            <div key={item.name} className="flex items-start justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] px-5 py-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold text-[var(--color-ink)]">{item.name}</p>
-                  {item.runningLow && (
-                    <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">Running low</span>
-                  )}
+        <>
+          {/* Need to buy section */}
+          <div className="mb-10">
+            <h2 className="mb-4 font-heading text-xl text-[var(--color-ink)]">Need to buy 🛒</h2>
+            <div>
+              {items.map((item) => (
+                <div key={item.name} className="flex items-center justify-between border-b border-[var(--color-sand-deep)] py-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-[var(--color-ink)]">{item.name}</p>
+                      {item.runningLow && (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                          Running low 🟡
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-[var(--color-ink-300)]">Used: {item.days.join(", ")}</p>
+                    {item.notes && <p className="mt-0.5 text-xs italic text-[var(--color-ink-300)]">{item.notes}</p>}
+                  </div>
+                  <div className="ml-4 shrink-0 text-right">
+                    <p className="text-sm font-medium text-[var(--color-ink)]">{item.totalGrams}g</p>
+                    {item.cups && <p className="text-xs text-[var(--color-ink-500)]">{item.cups}</p>}
+                  </div>
                 </div>
-                <p className="mt-0.5 text-xs text-[var(--color-ink-soft)]">Used on: {item.days.join(", ")}</p>
-                {item.notes && <p className="mt-0.5 text-xs italic text-[var(--color-ink-soft)]">{item.notes}</p>}
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="font-semibold text-[var(--color-ink)]">{item.totalGrams}g</p>
-                {item.cups && <p className="text-xs text-[var(--color-ink-soft)]">{item.cups}</p>}
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+            <p className="mt-4 text-xs text-[var(--color-ink-300)]">
+              {items.length} item{items.length !== 1 ? "s" : ""} · quantities combined across the week
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="mb-12 flex gap-4">
+            <button type="button" onClick={undefined} className="rounded-full border border-[var(--color-ink-300)] px-5 py-2.5 text-sm font-semibold text-[var(--color-ink)]">
+              Print list
+            </button>
+          </div>
+        </>
       )}
 
-      <p className="mt-8 text-center text-xs text-[var(--color-ink-soft)]">
-        {items.length} item{items.length !== 1 ? "s" : ""} · quantities combined across the week
-      </p>
-
       {/* Competitor comparison banner */}
-      {hasCostData && butternut && (
-        <div className="mt-8 rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6">
-          <p className="font-heading text-xl text-[var(--color-ink)]">
+      {hasCostData && deliveryComp && (
+        <div className="mb-12 rounded-2xl bg-[var(--color-forest-light)]/10 p-6">
+          <p className="text-sm font-semibold text-[var(--color-ink)]">
             {dogName}&apos;s home-cooked week: ~{currency}{weekCostTotal.toFixed(2)}
           </p>
-          <p className="mt-2 text-sm text-[var(--color-ink-soft)]">
-            Fresh food delivery for a {butternut.dog_weight_kg}kg dog: ~{currency}{(butternut.their_daily_cost * 7).toFixed(2)}
+          <p className="mt-2 text-sm text-[var(--color-ink-500)]">
+            Fresh food delivery for a {deliveryComp.dog_weight_kg}kg dog: ~{currency}{(deliveryComp.their_daily_cost * 7).toFixed(2)}
           </p>
-          {butternut.your_saving_daily > 0 && (
-            <p className="mt-2 font-semibold text-green-700">
-              You save approximately {currency}{(butternut.your_saving_daily * 7).toFixed(2)} this week 🐾
+          {deliveryComp.your_saving_daily > 0 && (
+            <p className="mt-2 text-sm font-semibold text-[var(--color-forest)]">
+              You save approximately {currency}{(deliveryComp.your_saving_daily * 7).toFixed(2)} this week 🐾
             </p>
           )}
-          <p className="mt-3 text-xs italic text-[var(--color-ink-soft)]">
+          <p className="mt-3 text-xs text-[var(--color-ink-300)]">
             Competitor estimates based on publicly listed pricing. Actual costs vary.
           </p>
         </div>
       )}
+
+      {/* Affiliate note */}
+      <p className="mb-12 border-t border-[var(--color-sand-deep)] pt-6 text-xs text-[var(--color-ink-300)]">
+        Some shopping links are affiliate links. We may earn a small commission at no extra cost to you.
+      </p>
     </div>
   );
 }

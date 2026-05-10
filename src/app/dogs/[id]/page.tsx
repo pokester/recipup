@@ -3,6 +3,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { DogHubClient } from "@/components/dogs/DogHubClient";
 
+function isWithinLastDays(dateStr: string, days: number): boolean {
+  return Date.now() - new Date(dateStr).getTime() < days * 24 * 60 * 60 * 1000;
+}
+
 type Dog = {
   id: string;
   name: string;
@@ -17,6 +21,11 @@ type Dog = {
 function capitalize(s: string | null) {
   if (!s) return "";
   return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
+}
+
+function toTitleCase(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
 }
 
 function ageLabel(years: number | null) {
@@ -94,48 +103,64 @@ export default async function DogHubPage({ params }: { params: Promise<{ id: str
   const allPlans = (allPlansData ?? []) as Parameters<typeof DogHubClient>[0]["allPlans"];
   const savedRecipes = (savedRecipesData ?? []) as Parameters<typeof DogHubClient>[0]["savedRecipes"];
 
-  // Show last week's response card if it was logged in the last 7 days
   const latestLog = healthLogs[0] ?? null;
-  const isRecentLog =
-    latestLog &&
-    Date.now() - new Date(latestLog.week_start).getTime() < 7 * 24 * 60 * 60 * 1000;
+  const isRecentLog = latestLog && isWithinLastDays(latestLog.week_start, 7);
   const latestLogResponse = isRecentLog ? latestLog : null;
 
+  const displayName = toTitleCase(dog.name);
+  const subtitle = [capitalize(dog.breed), ageLabel(dog.age_years), dog.weight_kg != null ? `${dog.weight_kg}kg` : null, capitalize(dog.sex)]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10 md:px-8">
+    <div className="mx-auto max-w-4xl px-6 py-10">
+      {/* Back link */}
+      <Link
+        href="/dogs"
+        className="mb-6 inline-block text-sm font-medium text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
+      >
+        ← All dogs
+      </Link>
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="font-heading text-4xl text-[var(--color-ink)]">{dog.name}</h1>
-            <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-              {[capitalize(dog.breed), ageLabel(dog.age_years), dog.weight_kg != null ? `${dog.weight_kg}kg` : null, capitalize(dog.sex)]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {dog.goal && (
-                <span className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-ink-soft)]">
-                  {capitalize(dog.goal)}
-                </span>
+          <div className="flex items-center gap-5">
+            {/* Avatar */}
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[var(--color-coral)]/10">
+              <span className="font-heading text-3xl font-semibold text-[var(--color-coral)]">
+                {displayName.charAt(0)}
+              </span>
+            </div>
+            <div>
+              <h1 className="font-heading text-3xl text-[var(--color-ink)]">{displayName}</h1>
+              {subtitle && (
+                <p className="mt-1 text-sm text-[var(--color-ink-500)]">{subtitle}</p>
               )}
-              {dog.diet_type && (
-                <span className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-ink-soft)]">
-                  {capitalize(dog.diet_type)}
-                </span>
-              )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {dog.goal && (
+                  <span className="rounded-full border border-[var(--color-sand-deep)] px-3 py-1 text-xs text-[var(--color-ink-500)]">
+                    {capitalize(dog.goal)}
+                  </span>
+                )}
+                {dog.diet_type && (
+                  <span className="rounded-full border border-[var(--color-sand-deep)] px-3 py-1 text-xs text-[var(--color-ink-500)]">
+                    {capitalize(dog.diet_type)}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex gap-2">
             <Link
               href={`/onboard?dog_id=${dog.id}`}
-              className="rounded-full border border-[var(--color-border-strong)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)]"
+              className="rounded-full border border-[var(--color-sand-deep)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)]"
             >
               Edit profile
             </Link>
             <Link
               href={`/onboard?dog_id=${dog.id}`}
-              className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+              className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
             >
               Generate recipes →
             </Link>

@@ -239,7 +239,9 @@ export async function searchAndAddIngredient(name: string, market: "uk" | "nl"):
       ? `https://www.tesco.com/groceries/en-GB/search?query=${encodeURIComponent(name)}`
       : `https://www.ah.nl/zoeken?query=${encodeURIComponent(name)}`;
 
-  console.log(`[price-lookup] Missing: "${name}" (${market}) → ${searchUrl}`);
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[price-lookup] Missing: "${name}" (${market}) → ${searchUrl}`);
+  }
 
   try {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
