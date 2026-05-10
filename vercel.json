@@ -1,0 +1,17 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm ci",
+  "functions": {
+    "src/app/api/generate-recipes/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/generate-plan-week/route.ts": {
+      "maxDuration": 120
+    },
+    "src/app/api/regenerate-day/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
