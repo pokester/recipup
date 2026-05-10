@@ -1,5 +1,3 @@
-<<<<<<< ours
-<<<<<<< ours
 -- ============================================================
 -- RECIPUP DATABASE SCHEMA
 -- Run this in the Supabase SQL Editor (Dashboard → SQL Editor)
@@ -434,9 +432,7 @@ CREATE POLICY "Anyone can read sync log"
 -- ingredient_prices (read-only for all, write via service role)
 -- Note: ingredient_prices already has RLS enabled and a SELECT policy above.
 -- The INSERT/UPDATE policy is intentionally omitted here — service role bypasses RLS.
-=======
-=======
->>>>>>> theirs
+
 /*
   POST-LAUNCH HARDENING (do not block deploy):
 
@@ -467,7 +463,3 @@ CREATE POLICY "Anyone can read sync log"
      loaded eagerly on dog hub; lazy import
      chart panels for performance.
 */
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs

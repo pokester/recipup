@@ -1,13 +1,5 @@
 import type { Metadata } from "next";
-<<<<<<< ours
-<<<<<<< ours
 import { Playfair_Display, DM_Sans } from "next/font/google";
-=======
-import { DM_Sans, Playfair_Display } from "next/font/google";
->>>>>>> theirs
-=======
-import { DM_Sans, Playfair_Display } from "next/font/google";
->>>>>>> theirs
 import "./globals.css";
 import { SiteLayout } from "@/components/layout/site-layout";
 

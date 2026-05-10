@@ -9,19 +9,13 @@
     "lint": "eslint",
     "predeploy": "npm run lint && npm run build",
     "ci": "npm ci && npm run lint && npm run build",
-    "test": "node scripts/run-smoke-tests.mjs",
-    "test:watch": "node scripts/run-smoke-tests.mjs"
+    "test": "node --test src/test/*.test.mjs",
+    "test:watch": "node --test --watch src/test/*.test.mjs"
   },
   "dependencies": {
-<<<<<<< ours
-<<<<<<< ours
     "@anthropic-ai/sdk": "^0.95.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.3",
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
     "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",

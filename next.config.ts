@@ -4,16 +4,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-<<<<<<< ours
-<<<<<<< ours
         source: "/logo-v2.png",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=0, must-revalidate",
-=======
-=======
->>>>>>> theirs
+          },
+        ],
+      },
+      {
         source: "/(.*)",
         headers: [
           {
@@ -43,33 +42,22 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Cache static assets aggressively.
         source: "/(.*)\\.(ico|png|jpg|jpeg|svg|woff2)",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
           },
         ],
       },
     ];
   },
-<<<<<<< ours
-<<<<<<< ours
-=======
   experimental: {
     optimizePackageImports: ["recharts"],
   },
->>>>>>> theirs
-=======
-  experimental: {
-    optimizePackageImports: ["recharts"],
+  turbopack: {
+    root: process.cwd(),
   },
->>>>>>> theirs
 };
 
 export default nextConfig;
