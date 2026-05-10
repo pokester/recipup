@@ -6,12 +6,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "predeploy": "npm run lint && npm run build",
+    "ci": "npm ci && npm run lint && npm run build",
+    "test": "node scripts/run-smoke-tests.mjs",
+    "test:watch": "node scripts/run-smoke-tests.mjs"
   },
   "dependencies": {
+<<<<<<< ours
+<<<<<<< ours
     "@anthropic-ai/sdk": "^0.95.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.3",
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
     "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -26,5 +36,8 @@
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   }
 }

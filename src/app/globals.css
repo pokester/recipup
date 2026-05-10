@@ -42,6 +42,7 @@
 
 /* ─── Tailwind utilities ─────────────────────────────────────────────── */
 @theme inline {
+<<<<<<< ours
   --color-background:   var(--color-warm-white);
   --color-foreground:   var(--color-ink-900);
   --color-warm-white:   var(--color-warm-white);
@@ -117,4 +118,20 @@
     text-transform: uppercase;
     color: var(--color-ink-500);
   }
+=======
+  --color-background: var(--color-cream);
+  --color-foreground: var(--color-ink);
+  --font-sans: var(--font-dm-sans);
+  --font-body: var(--font-dm-sans);
+  --font-heading: var(--font-playfair);
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-dm-sans), Arial, sans-serif;
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 }
