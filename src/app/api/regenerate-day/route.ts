@@ -35,6 +35,11 @@ function extractFirstJson(text: string): string | null {
   return raw.slice(firstBrace, lastBrace + 1);
 }
 
+function sanitiseInput(str: string | undefined, maxLength: number): string {
+  if (!str) return "";
+  return str.slice(0, maxLength).replace(/[<>{}]/g, "").trim();
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as RequestBody;
@@ -55,7 +60,50 @@ export async function POST(req: Request) {
       .single();
     if (!plan) return Response.json({ error: "Forbidden" }, { status: 403 });
 
+    // Hourly rate limit
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from("recipe_generations")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", oneHourAgo);
+    if (recentCount !== null && recentCount >= 10) {
+      return Response.json({
+        error: "rate_limit_exceeded",
+        message: "You've generated a lot of recipes this hour. Take a breather — you can generate more in a little while.",
+      }, { status: 429 });
+    }
+
+    // Model selection by tier
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_tier, trial_ends_at")
+      .eq("id", user.id)
+      .single();
+    const now = new Date();
+    const trialActive = profile?.trial_ends_at
+      ? new Date(profile.trial_ends_at as string) > now
+      : false;
+    const tier = profile?.subscription_tier as string | null;
+    const model = (trialActive || tier === "pack" || tier === "pack_pro" || tier === "founding")
+      ? "claude-sonnet-4-20250514"
+      : "claude-haiku-4-5-20251001";
+
+    // Sanitise user-controlled fields
+    const dp = body.dog_profile as Record<string, unknown>;
+    if (typeof dp.name === "string") dp.name = sanitiseInput(dp.name, 50);
+    if (typeof dp.notes === "string") dp.notes = sanitiseInput(dp.notes, 500);
+    if (typeof dp.other_exclusions === "string") dp.other_exclusions = sanitiseInput(dp.other_exclusions, 500);
+    if (dp.health_detail && typeof dp.health_detail === "object") {
+      const hd = dp.health_detail as Record<string, unknown>;
+      for (const k of Object.keys(hd)) {
+        if (typeof hd[k] === "string") hd[k] = sanitiseInput(hd[k] as string, 300);
+      }
+    }
+    if (typeof body.pantry_context === "string") body.pantry_context = sanitiseInput(body.pantry_context, 10000);
+
     const existingProteins = body.existing_week
+      .slice(0, 7)
       .map((d) => {
         const r = (d as Record<string, unknown>).recipe as Record<string, unknown> | undefined;
         return r?.name ?? "";
@@ -112,7 +160,7 @@ Return this exact structure:
           "anthropic-beta": "prompt-caching-2024-07-31",
         },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
+          model,
           max_tokens: 4096,
           messages: [
             {
