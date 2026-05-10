@@ -282,7 +282,7 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
       </button>
 
       <p className="text-center text-xs text-[var(--color-ink-300)]">
-        Recipup is not a veterinary tool. Always speak to your vet if you have concerns about {dogName}&apos;s health.
+        Recipup recipes are a guide, not medical advice. Always speak to your vet before making significant dietary changes, especially if your dog has a health condition.
       </p>
     </div>
   );

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyseHealthLogs, type HealthLog } from "@/lib/health-analysis";
 
+const isDev = process.env.NODE_ENV === "development";
+
 function getWeekStart(date = new Date()): string {
   const d = new Date(date);
   const day = d.getDay();
@@ -120,7 +122,7 @@ export async function POST(req: Request) {
       analysis,
     });
   } catch (err) {
-    console.error("health-log error:", err);
+    if (isDev) console.error("health-log error:", err);
     return NextResponse.json({ message: "Failed to save health log" }, { status: 500 });
   }
 }

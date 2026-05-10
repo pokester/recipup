@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export const maxDuration = 60;
 
+const isDev = process.env.NODE_ENV === "development";
+
 type RequestBody = {
   plan_id: string;
   dog_profile: Record<string, unknown>;
@@ -146,9 +148,7 @@ Return this exact structure:
     const parsed = JSON.parse(jsonText) as RegenerateResponse;
     return NextResponse.json(parsed);
   } catch (err) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("regenerate-day error:", err);
-    }
+    if (isDev) console.error("regenerate-day error:", err);
     return NextResponse.json({ message: "Regeneration failed" }, { status: 500 });
   }
 }

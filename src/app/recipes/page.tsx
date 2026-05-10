@@ -81,6 +81,9 @@ type GenerateRecipesResponse = {
   market?: "uk" | "nl";
 };
 
+const VET_DISCLAIMER =
+  "Recipup recipes are a guide, not medical advice. Always speak to your vet before making significant dietary changes, especially if your dog has a health condition.";
+
 function humanizeBreed(breed?: string) {
   if (!breed) return "";
   return breed.replace(/_/g, " ").split(" ").filter(Boolean)
@@ -348,7 +351,8 @@ export default function RecipesPage() {
             <p className="mt-2 text-sm text-[var(--color-ink-500)]">Daily target: {data.daily_calories} kcal</p>
             {data.vet_flag && data.vet_message && (
               <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900" style={{ borderLeft: "4px solid #F59E0B" }}>
-                {data.vet_message}
+                <p>{data.vet_message}</p>
+                <p className="mt-2 font-medium">{VET_DISCLAIMER}</p>
               </div>
             )}
           </header>
@@ -548,6 +552,12 @@ export default function RecipesPage() {
                         <p className="mt-1 text-xs text-[var(--color-ink-500)]">{recipe.nutrition_per_day.notes}</p>
                       )}
                     </div>
+
+                    {data.vet_flag && (
+                      <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium leading-relaxed text-amber-900">
+                        {VET_DISCLAIMER}
+                      </p>
+                    )}
                   </div>
                 </article>
               );

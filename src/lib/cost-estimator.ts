@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
+const isDev = process.env.NODE_ENV === "development";
+
 // ─── Public types ─────────────────────────────────────────────────────────────
 
 export type PriceMatch = {
@@ -239,7 +241,7 @@ export async function searchAndAddIngredient(name: string, market: "uk" | "nl"):
       ? `https://www.tesco.com/groceries/en-GB/search?query=${encodeURIComponent(name)}`
       : `https://www.ah.nl/zoeken?query=${encodeURIComponent(name)}`;
 
-  if (process.env.NODE_ENV === "development") {
+  if (isDev) {
     console.log(`[price-lookup] Missing: "${name}" (${market}) → ${searchUrl}`);
   }
 

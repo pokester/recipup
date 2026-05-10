@@ -1,3 +1,34 @@
+/*
+  POST-LAUNCH HARDENING (do not block deploy):
+
+  1. Content-Security-Policy header — requires
+     allowlisting Supabase, Google Fonts,
+     Anthropic endpoints. Add after launch
+     when endpoints are confirmed stable.
+
+  2. Supabase type generation — run:
+     npx supabase gen types typescript
+       --project-id [project-id]
+       > src/lib/supabase/database.types.ts
+     Then replace manual type casts throughout.
+
+  3. Rate limiting — add Upstash Redis or
+     Vercel KV for per-user and per-IP
+     rate limits on Claude API routes.
+
+  4. Playwright E2E tests — add full user
+     journey tests once app is stable in
+     production.
+
+  5. npm audit — run from a network
+     environment with npm registry access
+     and address any high/critical findings.
+
+  6. Dynamic import Recharts — currently
+     loaded eagerly on dog hub; lazy import
+     chart panels for performance.
+*/
+
 -- ============================================================
 -- RECIPUP DATABASE SCHEMA
 -- Run this in the Supabase SQL Editor (Dashboard → SQL Editor)

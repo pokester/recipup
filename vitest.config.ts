@@ -1,12 +1,11 @@
-// Vitest infrastructure is intended for this project, but registry access was
-// unavailable during release prep. This placeholder keeps the conventional
-// config path available until Vitest dependencies can be installed.
-const vitestConfig = {
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
   },
-};
-
-export default vitestConfig;
+});
