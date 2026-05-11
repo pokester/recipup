@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/ui/logo";
+import { DarkWordmark, Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -49,20 +49,30 @@ export default function SignupPage() {
 
   const handleGoogle = async () => {
     setLoading(true);
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboard` },
-    });
+    try {
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboard` },
+      });
+    } catch (err) {
+      setError((err as Error).message);
+      setLoading(false);
+    }
   };
 
   const handleApple = async () => {
     setLoading(true);
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboard` },
-    });
+    try {
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboard` },
+      });
+    } catch (err) {
+      setError((err as Error).message);
+      setLoading(false);
+    }
   };
 
   const handleEmail = async (e: FormEvent) => {
@@ -73,12 +83,18 @@ export default function SignupPage() {
       return;
     }
     setLoading(true);
-    const supabase = createClient();
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    });
+    let signUpError: { message: string } | null = null;
+    try {
+      const supabase = createClient();
+      const result = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } },
+      });
+      signUpError = result.error;
+    } catch (err) {
+      signUpError = { message: (err as Error).message };
+    }
     if (signUpError) {
       setError(signUpError.message);
       setLoading(false);
@@ -91,8 +107,7 @@ export default function SignupPage() {
     <div className="flex flex-col md:flex-row">
       {/* ── LEFT BRAND PANEL ── */}
       <div className="hidden md:flex md:w-5/12 lg:w-1/2 flex-col justify-between bg-[var(--color-forest)] p-12 py-16">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-white.png" alt="Recipup" height={40} style={{ height: "40px", width: "auto", filter: "brightness(0) invert(1)" }} />
+        <DarkWordmark />
 
         <div className="space-y-6">
           <div>

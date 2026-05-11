@@ -15,3 +15,17 @@ export function Logo({ height = 36, className }: LogoProps) {
     />
   );
 }
+
+type WordmarkProps = {
+  className?: string;
+};
+
+export function DarkWordmark({ className }: WordmarkProps) {
+  return (
+    <span
+      className={`font-heading text-3xl font-semibold leading-none text-[var(--color-warm-white)] ${className ?? ""}`}
+    >
+      Recipup
+    </span>
+  );
+}

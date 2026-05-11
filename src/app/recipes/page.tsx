@@ -90,6 +90,14 @@ function humanizeBreed(breed?: string) {
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 }
 
+function capitalizeName(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function parseFractionOrDecimal(value: string): number | null {
   const cleaned = value.trim().toLowerCase();
   const match = cleaned.match(/(\d+\s+\d+\/\d+)|(\d+\/\d+)|(\d+(\.\d+)?)/);
@@ -214,6 +222,7 @@ export default function RecipesPage() {
   }, [clearIntervalSafe, dogProfile, fetchRecipes, pantryContext, pantryLoaded]);
 
   const dogName = data?.dog_name || dogProfile?.dog_name || "your dog";
+  const displayDogName = dogName === "your dog" ? dogName : capitalizeName(dogName);
   const multiplier = batchDays;
   const hasCostAccess = data?.has_cost_access ?? false;
   const market = data?.market ?? "uk";
@@ -326,7 +335,7 @@ export default function RecipesPage() {
             ) : (
               <>
                 <div className="font-heading text-2xl text-[var(--color-ink)]">Something went wrong.</div>
-                <p className="mt-3 text-[var(--color-ink-500)]">It happens occasionally — please try again. If the problem persists, try updating {dogName}&apos;s profile.</p>
+                <p className="mt-3 text-[var(--color-ink-500)]">It happens occasionally — please try again. If the problem persists, try updating {displayDogName}&apos;s profile.</p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
                   <button type="button" onClick={() => dogProfile && fetchRecipes(dogProfile)} className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-40" disabled={!dogProfile}>Try again</button>
                   <button type="button" onClick={() => router.push("/onboard")} className="rounded-full border border-[var(--color-sand-deep)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]">Edit profile</button>

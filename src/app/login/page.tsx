@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/ui/logo";
+import { DarkWordmark, Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -35,31 +35,47 @@ export default function LoginPage() {
 
   const handleGoogle = async () => {
     setLoading(true);
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+    try {
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+    } catch (err) {
+      setError((err as Error).message);
+      setLoading(false);
+    }
   };
 
   const handleApple = async () => {
     setLoading(true);
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+    try {
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+    } catch (err) {
+      setError((err as Error).message);
+      setLoading(false);
+    }
   };
 
   const handleEmail = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    let signInError: { message: string } | null = null;
+    try {
+      const supabase = createClient();
+      const result = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      signInError = result.error;
+    } catch (err) {
+      signInError = { message: (err as Error).message };
+    }
     if (signInError) {
       setError(signInError.message);
       setLoading(false);
@@ -73,8 +89,7 @@ export default function LoginPage() {
     <div className="flex flex-col md:flex-row">
       {/* ── LEFT BRAND PANEL ── */}
       <div className="hidden md:flex md:w-5/12 lg:w-1/2 flex-col justify-between bg-[var(--color-forest)] p-12 py-16">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-white.png" alt="Recipup" height={40} style={{ height: "40px", width: "auto", filter: "brightness(0) invert(1)" }} />
+        <DarkWordmark />
 
         <div>
           <p className="font-heading text-6xl leading-none text-[var(--color-coral)]">&ldquo;</p>

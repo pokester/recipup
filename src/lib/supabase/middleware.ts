@@ -5,16 +5,26 @@ const PROTECTED = ["/dashboard", "/planner", "/library", "/account", "/dogs", "/
 const AUTH_PAGES = ["/login", "/signup"];
 
 export async function updateSession(request: NextRequest) {
-  // Skip if Supabase is not yet configured (local dev without credentials)
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  const { pathname } = request.nextUrl;
+  const isProtectedRoute = PROTECTED.some((p) => pathname.startsWith(p));
+  const isAuthPage = AUTH_PAGES.some((p) => pathname.startsWith(p));
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (isProtectedRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
     return NextResponse.next({ request });
   }
 
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -33,20 +43,27 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Refresh session — must not call supabase between createServerClient and getUser
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    // Refresh session — must not call supabase between createServerClient and getUser
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+  } catch {
+    if (isProtectedRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
 
-  const { pathname } = request.nextUrl;
-
-  if (!user && PROTECTED.some((p) => pathname.startsWith(p))) {
+  if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && AUTH_PAGES.some((p) => pathname.startsWith(p))) {
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

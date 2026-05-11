@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DarkWordmark } from "@/components/ui/logo";
 
 export function SiteFooter() {
   return (
@@ -7,8 +8,7 @@ export function SiteFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-white.png" alt="Recipup" height={36} style={{ height: "36px", width: "auto", filter: "brightness(0) invert(1)" }} />
+            <DarkWordmark />
             <p className="mt-3 text-sm text-[var(--color-warm-white)]/60">
               Real recipes. Happy dogs.
             </p>

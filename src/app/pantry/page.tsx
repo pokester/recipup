@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 import { getPantry, savePantryItems, type PantryItemInput } from "@/lib/pantry";
 import {
   DEFAULT_INGREDIENTS,
@@ -26,6 +26,18 @@ type EquipmentRow = {
   isAvailable: boolean;
 };
 
+const LOAD_TIMEOUT_MS = 10000;
+
+function withTimeout<T>(promise: Promise<T>, ms = LOAD_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("Request timed out")), ms);
+    promise
+      .then(resolve)
+      .catch(reject)
+      .finally(() => clearTimeout(timeout));
+  });
+}
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -41,6 +53,7 @@ export default function PantryPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -60,74 +73,82 @@ export default function PantryPage() {
 
   useEffect(() => {
     const init = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace("/login"); return; }
-      setUserId(user.id);
+      try {
+        if (!isSupabaseBrowserConfigured()) {
+          throw new Error("Supabase is not configured. Check .env.local and restart the dev server.");
+        }
 
-      const pantry = await getPantry(supabase, user.id);
+        const supabase = createClient();
+        const { data: { user } } = await withTimeout(supabase.auth.getUser());
+        if (!user) { router.replace("/login"); return; }
+        setUserId(user.id);
 
-      const defaultIngNames = new Set(DEFAULT_INGREDIENTS.map((i) => i.name));
-      const defaultSupNames = new Set(DEFAULT_SUPPLEMENTS.map((i) => i.name));
+        const pantry = await withTimeout(getPantry(supabase, user.id));
 
-      const ingMap = new Map(pantry.ingredients.map((i) => [i.name, i]));
-      setIngredientRows(
-        DEFAULT_INGREDIENTS.map((d) => {
-          const db = ingMap.get(d.name);
-          return {
-            name: d.name,
-            unit: d.unit,
-            isAvailable: db?.is_available ?? false,
-            quantity: db?.quantity != null ? String(db.quantity) : "",
-            isRunningLow: db?.is_running_low ?? false,
-          };
-        }),
-      );
-      const customIng = pantry.ingredients
-        .filter((i) => !defaultIngNames.has(i.name))
-        .map((i) => ({
-          name: i.name,
-          unit: i.unit ?? "",
-          isAvailable: i.is_available,
-          quantity: i.quantity != null ? String(i.quantity) : "",
-          isRunningLow: i.is_running_low ?? false,
-        }));
-      setCustomIngredients(customIng);
+        const defaultIngNames = new Set(DEFAULT_INGREDIENTS.map((i) => i.name));
+        const defaultSupNames = new Set(DEFAULT_SUPPLEMENTS.map((i) => i.name));
 
-      const supMap = new Map(pantry.supplements.map((i) => [i.name, i]));
-      setSupplementRows(
-        DEFAULT_SUPPLEMENTS.map((d) => {
-          const db = supMap.get(d.name);
-          return {
-            name: d.name,
-            unit: d.unit,
-            isAvailable: db?.is_available ?? false,
-            quantity: db?.quantity != null ? String(db.quantity) : "",
-            isRunningLow: db?.is_running_low ?? false,
-          };
-        }),
-      );
-      const customSup = pantry.supplements
-        .filter((i) => !defaultSupNames.has(i.name))
-        .map((i) => ({
-          name: i.name,
-          unit: i.unit ?? "",
-          isAvailable: i.is_available,
-          quantity: i.quantity != null ? String(i.quantity) : "",
-          isRunningLow: i.is_running_low ?? false,
-        }));
-      setCustomSupplements(customSup);
+        const ingMap = new Map(pantry.ingredients.map((i) => [i.name, i]));
+        setIngredientRows(
+          DEFAULT_INGREDIENTS.map((d) => {
+            const db = ingMap.get(d.name);
+            return {
+              name: d.name,
+              unit: d.unit,
+              isAvailable: db?.is_available ?? false,
+              quantity: db?.quantity != null ? String(db.quantity) : "",
+              isRunningLow: db?.is_running_low ?? false,
+            };
+          }),
+        );
+        const customIng = pantry.ingredients
+          .filter((i) => !defaultIngNames.has(i.name))
+          .map((i) => ({
+            name: i.name,
+            unit: i.unit ?? "",
+            isAvailable: i.is_available,
+            quantity: i.quantity != null ? String(i.quantity) : "",
+            isRunningLow: i.is_running_low ?? false,
+          }));
+        setCustomIngredients(customIng);
 
-      const eqMap = new Map(pantry.equipment.map((e) => [e.name, e]));
-      setEquipmentRows(
-        DEFAULT_EQUIPMENT.map((d) => {
-          const db = eqMap.get(d.name);
-          return { name: d.name, isAvailable: db?.is_available ?? false };
-        }),
-      );
+        const supMap = new Map(pantry.supplements.map((i) => [i.name, i]));
+        setSupplementRows(
+          DEFAULT_SUPPLEMENTS.map((d) => {
+            const db = supMap.get(d.name);
+            return {
+              name: d.name,
+              unit: d.unit,
+              isAvailable: db?.is_available ?? false,
+              quantity: db?.quantity != null ? String(db.quantity) : "",
+              isRunningLow: db?.is_running_low ?? false,
+            };
+          }),
+        );
+        const customSup = pantry.supplements
+          .filter((i) => !defaultSupNames.has(i.name))
+          .map((i) => ({
+            name: i.name,
+            unit: i.unit ?? "",
+            isAvailable: i.is_available,
+            quantity: i.quantity != null ? String(i.quantity) : "",
+            isRunningLow: i.is_running_low ?? false,
+          }));
+        setCustomSupplements(customSup);
 
-      if (pantry.lastUpdated) setLastSaved(pantry.lastUpdated);
-      setLoaded(true);
+        const eqMap = new Map(pantry.equipment.map((e) => [e.name, e]));
+        setEquipmentRows(
+          DEFAULT_EQUIPMENT.map((d) => {
+            const db = eqMap.get(d.name);
+            return { name: d.name, isAvailable: db?.is_available ?? false };
+          }),
+        );
+
+        if (pantry.lastUpdated) setLastSaved(pantry.lastUpdated);
+        setLoaded(true);
+      } catch (err) {
+        setLoadError((err as Error).message || "Could not load your pantry.");
+      }
     };
     void init();
   }, [router]);
@@ -240,7 +261,31 @@ export default function PantryPage() {
   if (!loaded) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-sm text-[var(--color-ink-500)]">Loading your kitchen...</p>
+        {loadError ? (
+          <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-amber-50 px-6 py-5 text-center">
+            <h1 className="font-heading text-xl text-amber-950">Kitchen unavailable</h1>
+            <p className="mt-2 text-sm leading-relaxed text-amber-900">
+              {loadError}
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="rounded-full bg-[var(--color-coral)] px-5 py-2 text-sm font-semibold text-[var(--color-warm-white)]"
+              >
+                Try again
+              </button>
+              <Link
+                href="/dashboard"
+                className="rounded-full border border-amber-300 px-5 py-2 text-sm font-semibold text-amber-950"
+              >
+                Dashboard
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--color-ink-500)]">Loading your kitchen...</p>
+        )}
       </div>
     );
   }
