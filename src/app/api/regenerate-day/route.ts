@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sanitisePromptPayload, sanitisePromptText } from "@/lib/prompt-safety";
+import { handleAPIError } from "@/lib/api-error";
 
 export const maxDuration = 60;
-
-const isDev = process.env.NODE_ENV === "development";
 
 type RequestBody = {
   plan_id: string;
@@ -61,21 +60,7 @@ export async function POST(req: Request) {
       .single();
     if (!plan) return Response.json({ error: "Forbidden" }, { status: 403 });
 
-    // Hourly rate limit
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count: recentCount } = await supabase
-      .from("recipe_generations")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", oneHourAgo);
-    if (recentCount !== null && recentCount >= 10) {
-      return Response.json({
-        error: "rate_limit_exceeded",
-        message: "You've generated a lot of recipes this hour. Take a breather — you can generate more in a little while.",
-      }, { status: 429 });
-    }
-
-    // Model selection by tier
+    // Model selection by tier (needed for logging)
     const { data: profile } = await supabase
       .from("profiles")
       .select("subscription_tier, trial_ends_at")
@@ -89,6 +74,23 @@ export async function POST(req: Request) {
     const model = (trialActive || tier === "pack" || tier === "pack_pro" || tier === "founding")
       ? "claude-sonnet-4-20250514"
       : "claude-haiku-4-5-20251001";
+
+    // Hourly rate limit
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from("recipe_generations")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", oneHourAgo);
+    if (recentCount !== null && recentCount >= 10) {
+      console.log(`[rate-limit] user:${user.id} tier:${tier} hourly_rate_limit_exceeded count:${recentCount}`);
+      return Response.json({
+        error: "rate_limit_exceeded",
+        message: "You've generated a lot of recipes this hour. Take a breather — you can generate more in a little while.",
+      }, { status: 429 });
+    }
+
+    console.log(`[regenerate-day] user:${user.id} tier:${tier} model:${model} trial_active:${trialActive}`);
 
     // Sanitise user-controlled fields
     const dp = body.dog_profile as Record<string, unknown>;
@@ -197,7 +199,6 @@ Return this exact structure:
     const parsed = JSON.parse(jsonText) as RegenerateResponse;
     return NextResponse.json(parsed);
   } catch (err) {
-    if (isDev) console.error("regenerate-day error:", err);
-    return NextResponse.json({ message: "Regeneration failed" }, { status: 500 });
+    return handleAPIError(err);
   }
 }

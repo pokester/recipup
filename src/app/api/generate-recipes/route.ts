@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { calculateRecipeCost, compareToKibble, compareToCompetitors } from "@/lib/cost-estimator";
 import { analyseHealthLogs, buildHealthPromptContext, type HealthLog } from "@/lib/health-analysis";
 import { sanitisePromptPayload, sanitisePromptText } from "@/lib/prompt-safety";
+import { handleAPIError } from "@/lib/api-error";
 
 export const maxDuration = 60;
 
@@ -201,6 +202,7 @@ export async function POST(req: Request) {
         .eq("user_id", user.id)
         .gte("created_at", startOfMonth);
       if (count !== null && count >= 3) {
+        console.log(`[rate-limit] user:${user.id} tier:free monthly_limit_reached`);
         return Response.json({
           error: "monthly_limit_reached",
           message: "You've used your 3 free recipe generations this month. Upgrade to Pack for unlimited recipes.",
@@ -217,6 +219,7 @@ export async function POST(req: Request) {
       .eq("user_id", user.id)
       .gte("created_at", oneHourAgo);
     if (recentCount !== null && recentCount >= 10) {
+      console.log(`[rate-limit] user:${user.id} tier:${tier} hourly_rate_limit_exceeded count:${recentCount}`);
       return Response.json({
         error: "rate_limit_exceeded",
         message: "You've generated a lot of recipes this hour. Take a breather — you can generate more in a little while.",
@@ -227,6 +230,7 @@ export async function POST(req: Request) {
     const model = (trialActive || tier === "pack" || tier === "pack_pro" || tier === "founding")
       ? "claude-sonnet-4-20250514"
       : "claude-haiku-4-5-20251001";
+    console.log(`[recipe-generation] user:${user.id} tier:${tier} model:${model} trial_active:${trialActive}`);
 
     // Build cost targeting prompt if the dog has a known food spend
     const dogBase = (dogProfile.dog as Record<string, unknown> | undefined) ?? {};
@@ -330,9 +334,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ...parsed, recipes: recipesWithCosts, has_cost_access: hasCostAccess, market }, { status: 200 });
   } catch (err) {
-    if ((err as Error).name === "AbortError") {
-      return Response.json({ error: "Recipe generation timed out. Please try again." }, { status: 504 });
-    }
-    return NextResponse.json({ message: "Recipe generation failed" }, { status: 500 });
+    return handleAPIError(err);
   }
 }

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyseHealthLogs, type HealthLog } from "@/lib/health-analysis";
-
-const isDev = process.env.NODE_ENV === "development";
+import { handleAPIError } from "@/lib/api-error";
 
 function getWeekStart(date = new Date()): string {
   const d = new Date(date);
@@ -48,15 +47,22 @@ export async function POST(req: Request) {
     const week_start = suppliedWeekStart ?? getWeekStart();
 
     // Fetch last 4 weeks of logs for analysis
-    const { data: existingLogs } = await supabase
-      .from("health_logs")
-      .select(
-        "week_start, weight_kg, energy_level, coat_score, appetite, itching, joint_stiffness, digestion, vomiting",
-      )
-      .eq("dog_id", dog_id)
-      .neq("week_start", week_start)
-      .order("week_start", { ascending: false })
-      .limit(4);
+    let existingLogs = null;
+    try {
+      const result = await supabase
+        .from("health_logs")
+        .select(
+          "week_start, weight_kg, energy_level, coat_score, appetite, itching, joint_stiffness, digestion, vomiting",
+        )
+        .eq("dog_id", dog_id)
+        .neq("week_start", week_start)
+        .order("week_start", { ascending: false })
+        .limit(4);
+      existingLogs = result.data;
+    } catch (err) {
+      console.error(`[health-log] Failed to fetch history for dog:${dog_id}`, err);
+      // Non-critical — proceed without history
+    }
 
     const typedDog = dog as {
       id: string;
@@ -122,7 +128,6 @@ export async function POST(req: Request) {
       analysis,
     });
   } catch (err) {
-    if (isDev) console.error("health-log error:", err);
-    return NextResponse.json({ message: "Failed to save health log" }, { status: 500 });
+    return handleAPIError(err);
   }
 }

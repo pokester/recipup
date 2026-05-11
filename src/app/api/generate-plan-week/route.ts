@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyseHealthLogs, buildHealthPromptContext, type HealthLog } from "@/lib/health-analysis";
 import { sanitisePromptPayload, sanitisePromptText } from "@/lib/prompt-safety";
+import { handleAPIError } from "@/lib/api-error";
 
 export const maxDuration = 120;
-
-const isDev = process.env.NODE_ENV === "development";
 
 function sanitiseInput(str: string | undefined, maxLength: number): string {
   if (!str) return "";
@@ -340,10 +339,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ plan_id, week_data: weekData });
   } catch (err) {
-    if ((err as Error).name === "AbortError") {
-      return Response.json({ error: "Recipe generation timed out. Please try again." }, { status: 504 });
-    }
-    if (isDev) console.error("generate-plan-week error:", err);
-    return NextResponse.json({ message: "Plan generation failed" }, { status: 500 });
+    return handleAPIError(err);
   }
 }

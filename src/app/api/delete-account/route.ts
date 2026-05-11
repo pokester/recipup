@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
-
-const isDev = process.env.NODE_ENV === "development";
+import { handleAPIError } from "@/lib/api-error";
 
 export async function POST() {
   try {
@@ -31,7 +30,6 @@ export async function POST() {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    if (isDev) console.error("delete-account error:", err);
-    return NextResponse.json({ message: "Failed to delete account" }, { status: 500 });
+    return handleAPIError(err);
   }
 }
