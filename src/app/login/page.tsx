@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DarkWordmark, Logo } from "@/components/ui/logo";
+import { Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -89,7 +89,13 @@ export default function LoginPage() {
     <div className="flex flex-col md:flex-row">
       {/* ── LEFT BRAND PANEL ── */}
       <div className="hidden md:flex md:w-5/12 lg:w-1/2 flex-col justify-between bg-[var(--color-forest)] p-12 py-16">
-        <DarkWordmark />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-white.png"
+          alt="Recipup"
+          height={40}
+          style={{ height: "40px", width: "auto" }}
+        />
 
         <div>
           <p className="font-heading text-6xl leading-none text-[var(--color-coral)]">&ldquo;</p>
