@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { calculateRecipeCost, compareToKibble, compareToCompetitors } from "@/lib/cost-estimator";
 import { analyseHealthLogs, buildHealthPromptContext, type HealthLog } from "@/lib/health-analysis";
+import { sanitisePromptPayload, sanitisePromptText } from "@/lib/prompt-safety";
 
 export const maxDuration = 60;
 
@@ -11,7 +12,7 @@ type ClaudeParsedResponse = { recipes?: unknown[] } & Record<string, unknown>;
 
 function sanitiseInput(str: string | undefined, maxLength: number): string {
   if (!str) return "";
-  return str.slice(0, maxLength).replace(/[<>{}]/g, "").trim();
+  return sanitisePromptText(str, maxLength);
 }
 
 function extractFirstJson(text: string) {
@@ -152,7 +153,8 @@ Return this exact structure:
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as DogProfile & { pantry_context?: string };
-    const { pantry_context: pantryContext, ...dogProfile } = body;
+    const { pantry_context: pantryContext, ...rawDogProfile } = body;
+    const dogProfile = sanitisePromptPayload(rawDogProfile) as DogProfile;
 
     // Auth guard
     const supabase = await createClient();
@@ -269,7 +271,7 @@ export async function POST(req: Request) {
       // Non-critical — proceed without health context
     }
 
-    const parsed = (await callClaude(dogProfile as DogProfile, model, sanitisedPantry, costTarget, healthContext)) as ClaudeParsedResponse;
+    const parsed = (await callClaude(dogProfile, model, sanitisedPantry, costTarget, healthContext)) as ClaudeParsedResponse;
 
     // Log generation
     try {

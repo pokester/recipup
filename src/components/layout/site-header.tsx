@@ -3,23 +3,37 @@ import { Logo } from "@/components/ui/logo";
 import { UserMenu } from "@/components/layout/user-menu";
 import { DogsDropdown } from "@/components/layout/dogs-dropdown";
 import { createClient } from "@/lib/supabase/server";
+import { withTimeout } from "@/lib/async";
 
 export async function SiteHeader() {
   let user = null;
   let dogs: { id: string; name: string; breed: string | null }[] = [];
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
-    if (user) {
-      const { data: dogRows } = await supabase
-        .from("dogs")
-        .select("id, name, breed")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-      dogs = (dogRows ?? []) as { id: string; name: string; breed: string | null }[];
+    try {
+      const supabase = await createClient();
+      const { data } = await withTimeout(
+        supabase.auth.getUser(),
+        5000,
+        "Header auth check timed out",
+      );
+      user = data.user;
+      if (user) {
+        const { data: dogRows } = await withTimeout(
+          supabase
+            .from("dogs")
+            .select("id, name, breed")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .order("created_at", { ascending: false }),
+          5000,
+          "Header dogs query timed out",
+        );
+        dogs = (dogRows ?? []) as { id: string; name: string; breed: string | null }[];
+      }
+    } catch {
+      user = null;
+      dogs = [];
     }
   }
 

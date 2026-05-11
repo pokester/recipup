@@ -126,7 +126,7 @@ function safetyBadge(score: number) {
 
 export default function RecipesPage() {
   const router = useRouter();
-  const [status, setStatus] = useState<"loading" | "results" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "results" | "error" | "missing_profile">("loading");
   const [dogProfile, setDogProfile] = useState<DogProfile | null>(null);
   const [data, setData] = useState<GenerateRecipesResponse | null>(null);
   const [pantryContext, setPantryContext] = useState<string | null>(null);
@@ -202,7 +202,10 @@ export default function RecipesPage() {
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem("recipup_dog_profile");
-      if (!raw) { router.replace("/onboard"); return; }
+      if (!raw) {
+        startTransition(() => setStatus("missing_profile"));
+        return;
+      }
       const ctx = window.localStorage.getItem("recipup_pantry_context");
       const unavail = window.localStorage.getItem("recipup_unavailable_equipment");
       startTransition(() => {
@@ -211,7 +214,9 @@ export default function RecipesPage() {
         if (unavail) setUnavailableEquipment(JSON.parse(unavail) as string[]);
         setPantryLoaded(true);
       });
-    } catch { router.replace("/onboard"); }
+    } catch {
+      startTransition(() => setStatus("missing_profile"));
+    }
   }, [router]);
 
   useEffect(() => {
@@ -342,6 +347,24 @@ export default function RecipesPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {status === "missing_profile" && (
+        <div className="mx-auto max-w-md px-6 py-20">
+          <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-8 text-center shadow-[var(--shadow-card)]">
+            <div className="font-heading text-2xl text-[var(--color-ink)]">Start with your dog&apos;s profile</div>
+            <p className="mt-3 text-[var(--color-ink-500)]">
+              We need a few details about your dog before building recipes.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push("/onboard")}
+              className="mt-6 rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+            >
+              Build my dog&apos;s profile →
+            </button>
           </div>
         </div>
       )}

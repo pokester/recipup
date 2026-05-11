@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { WaitlistForm } from "@/components/home/WaitlistForm";
 import { createClient } from "@/lib/supabase/server";
+import { withTimeout } from "@/lib/async";
 
 export const dynamic = "force-dynamic";
 
@@ -15,18 +16,34 @@ export default async function Home() {
   let firstDogName = "";
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
+    try {
+      const supabase = await createClient();
+      const { data } = await withTimeout(
+        supabase.auth.getUser(),
+        5000,
+        "Home auth check timed out",
+      );
+      user = data.user;
 
-    if (user) {
-      const [{ data: profile }, { data: dogs }] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("id", user.id).single(),
-        supabase.from("dogs").select("name").eq("user_id", user.id).eq("is_active", true).order("created_at", { ascending: false }).limit(1),
-      ]);
-      const rawName = (profile as { full_name: string | null } | null)?.full_name;
-      firstName = rawName ? rawName.split(" ")[0] : (user.email?.split("@")[0] ?? "");
-      firstDogName = toTitleCase((dogs as { name: string }[] | null)?.[0]?.name ?? "");
+      if (user) {
+        const [{ data: profile }, { data: dogs }] = await Promise.all([
+          withTimeout(
+            supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+            5000,
+            "Profile query timed out",
+          ),
+          withTimeout(
+            supabase.from("dogs").select("name").eq("user_id", user.id).eq("is_active", true).order("created_at", { ascending: false }).limit(1),
+            5000,
+            "Dogs query timed out",
+          ),
+        ]);
+        const rawName = (profile as { full_name: string | null } | null)?.full_name;
+        firstName = rawName ? rawName.split(" ")[0] : (user.email?.split("@")[0] ?? "");
+        firstDogName = toTitleCase((dogs as { name: string }[] | null)?.[0]?.name ?? "");
+      }
+    } catch {
+      user = null;
     }
   }
 

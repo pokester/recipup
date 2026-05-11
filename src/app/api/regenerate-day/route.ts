@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sanitisePromptPayload, sanitisePromptText } from "@/lib/prompt-safety";
 
 export const maxDuration = 60;
 
@@ -37,12 +38,12 @@ function extractFirstJson(text: string): string | null {
 
 function sanitiseInput(str: string | undefined, maxLength: number): string {
   if (!str) return "";
-  return str.slice(0, maxLength).replace(/[<>{}]/g, "").trim();
+  return sanitisePromptText(str, maxLength);
 }
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as RequestBody;
+    const body = sanitisePromptPayload(await req.json()) as RequestBody;
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return NextResponse.json({ message: "Missing API key" }, { status: 500 });
 

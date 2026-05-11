@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { withTimeout } from "@/lib/async";
 import {
   DEFAULT_INGREDIENTS,
   DEFAULT_SUPPLEMENTS,
@@ -216,25 +217,35 @@ function OnboardPage() {
   // ─── Auth check + pantry pre-fill ──────────────────────────────────────────
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setIsLoggedIn(true);
-        setUserId(user.id);
-        // Pre-fill pantry from DB
-        supabase
-          .from("pantry_items")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: true })
-          .then(({ data }) => {
-            if (!data || data.length === 0) return;
-            // Find latest updated timestamp
-            const latestTs = data.reduce((latest: string, item: Record<string, unknown>) => {
-              const t = (item.last_updated as string) ?? "";
-              return t > latest ? t : latest;
-            }, "");
-            if (latestTs) setPantryLastUpdated(latestTs);
+    let cancelled = false;
+
+    async function checkAuth() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await withTimeout(
+          supabase.auth.getUser(),
+          5000,
+          "Auth check timed out",
+        );
+        if (cancelled) return;
+
+        if (user) {
+          setIsLoggedIn(true);
+          setUserId(user.id);
+          // Pre-fill pantry from DB
+          void supabase
+            .from("pantry_items")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: true })
+            .then(({ data }) => {
+              if (!data || data.length === 0) return;
+              // Find latest updated timestamp
+              const latestTs = data.reduce((latest: string, item: Record<string, unknown>) => {
+                const t = (item.last_updated as string) ?? "";
+                return t > latest ? t : latest;
+              }, "");
+              if (latestTs) setPantryLastUpdated(latestTs);
 
             const dbMap = new Map<string, Record<string, unknown>>(
               data.map((d: Record<string, unknown>) => [d.name as string, d])
@@ -300,10 +311,18 @@ function OnboardPage() {
                 isRunningLow: d.is_running_low as boolean,
               })));
             }
-          });
+            });
+        }
+        setAuthChecked(true);
+      } catch {
+        if (!cancelled) setAuthChecked(true);
       }
-      setAuthChecked(true);
-    });
+    }
+
+    void checkAuth();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ─── Navigation helpers ───────────────────────────────────────────────────
@@ -450,9 +469,24 @@ function OnboardPage() {
     setAgentPayload(payload);
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      let user: { id: string } | null = null;
+      let supabase: ReturnType<typeof createClient> | null = null;
+      try {
+        supabase = createClient();
+        const result = await withTimeout(
+          supabase.auth.getUser(),
+          5000,
+          "Auth check timed out",
+        );
+        user = result.data.user;
+      } catch {
+        user = null;
+      }
+
+      if (!user || !supabase) {
+        try {
+          window.localStorage.setItem("recipup_pending_dog_profile", JSON.stringify(payload));
+        } catch { /* ignore */ }
         setPendingPayload(payload);
         setShowSaveModal(true);
         return;
@@ -563,7 +597,7 @@ function OnboardPage() {
           <div className="w-full max-w-md rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream)] p-8 shadow-xl">
             <h2 className="font-heading text-2xl text-[var(--color-ink)]">Save your recipes?</h2>
             <p className="mt-3 text-[var(--color-ink-soft)]">
-              Create a free account to keep your dog&apos;s profile and access your recipes anytime.
+              Create a free account to generate recipes, keep your dog&apos;s profile, and access everything again later.
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <button
@@ -573,13 +607,11 @@ function OnboardPage() {
               >
                 Create free account
               </button>
-              <button
-                type="button"
-                onClick={() => { setShowSaveModal(false); if (pendingPayload) proceedWithGeneration(pendingPayload); }}
-                className="rounded-full border border-[var(--color-border-strong)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]"
-              >
-                Continue without saving
-              </button>
+              {pendingPayload && (
+                <p className="text-center text-xs text-[var(--color-ink-soft)]">
+                  We&apos;ll keep this dog profile on this device while you create the account.
+                </p>
+              )}
             </div>
           </div>
         </div>

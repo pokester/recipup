@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { withTimeout } from "@/lib/async";
 
 const PROTECTED = ["/dashboard", "/planner", "/library", "/account", "/dogs", "/pantry"];
 const AUTH_PAGES = ["/login", "/signup"];
@@ -46,7 +47,11 @@ export async function updateSession(request: NextRequest) {
   let user = null;
   try {
     // Refresh session — must not call supabase between createServerClient and getUser
-    const result = await supabase.auth.getUser();
+    const result = await withTimeout(
+      supabase.auth.getUser(),
+      5000,
+      "Middleware auth check timed out",
+    );
     user = result.data.user;
   } catch {
     if (isProtectedRoute) {

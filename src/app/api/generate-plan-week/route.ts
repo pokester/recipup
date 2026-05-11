@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyseHealthLogs, buildHealthPromptContext, type HealthLog } from "@/lib/health-analysis";
+import { sanitisePromptPayload, sanitisePromptText } from "@/lib/prompt-safety";
 
 export const maxDuration = 120;
 
@@ -8,7 +9,7 @@ const isDev = process.env.NODE_ENV === "development";
 
 function sanitiseInput(str: string | undefined, maxLength: number): string {
   if (!str) return "";
-  return str.slice(0, maxLength).replace(/[<>{}]/g, "").trim();
+  return sanitisePromptText(str, maxLength);
 }
 
 type PinnedDay = { day_number: number; recipe_data: Record<string, unknown> };
@@ -206,7 +207,7 @@ Return this exact JSON structure (all 7 days, Monday=1 through Sunday=7):
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as RequestBody;
+    const body = sanitisePromptPayload(await req.json()) as RequestBody;
     const { plan_id, week_number, plan_start_date } = body;
 
     const supabase = await createClient();

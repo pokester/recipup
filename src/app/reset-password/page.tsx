@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
+import { withTimeout } from "@/lib/async";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,11 +16,21 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const supabase = createClient();
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email,
-      { redirectTo: `${window.location.origin}/auth/callback?next=/account` },
-    );
+    let resetError: { message: string } | null = null;
+    try {
+      const supabase = createClient();
+      const result = await withTimeout(
+        supabase.auth.resetPasswordForEmail(
+          email,
+          { redirectTo: `${window.location.origin}/auth/callback?next=/account` },
+        ),
+        10000,
+        "Password reset timed out",
+      );
+      resetError = result.error;
+    } catch (err) {
+      resetError = { message: (err as Error).message };
+    }
     setLoading(false);
     if (resetError) {
       setError(resetError.message);

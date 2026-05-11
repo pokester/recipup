@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
+import { withTimeout } from "@/lib/async";
 
 function GoogleIcon() {
   return (
@@ -68,10 +69,14 @@ export default function LoginPage() {
     let signInError: { message: string } | null = null;
     try {
       const supabase = createClient();
-      const result = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const result = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email,
+          password,
+        }),
+        10000,
+        "Sign in timed out",
+      );
       signInError = result.error;
     } catch (err) {
       signInError = { message: (err as Error).message };

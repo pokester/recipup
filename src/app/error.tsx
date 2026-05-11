@@ -1,44 +1,46 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import Link from 'next/link'
+import { useEffect } from "react";
+import Link from "next/link";
+
+const isDev = process.env.NODE_ENV === "development";
 
 export default function Error({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error)
-  }, [error])
+    if (isDev) console.error(error);
+  }, [error]);
 
   return (
-    <div className="min-h-screen bg-oat flex items-center justify-center px-6">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-sand)] px-6">
       <div className="max-w-md text-center">
-        <h2 className="font-serif text-3xl text-ink mb-3">
+        <h2 className="mb-3 font-heading text-3xl text-[var(--color-ink)]">
           Something went wrong.
         </h2>
-        <p className="font-sans text-base text-muted mb-8">
+        <p className="mb-8 text-base text-[var(--color-ink-soft)]">
           An unexpected error occurred. Try refreshing the page — if it keeps
           happening, contact us at hello@recipup.com
         </p>
-        <div className="flex gap-4 justify-center">
+        <div className="flex justify-center gap-4">
           <button
             onClick={reset}
-            className="bg-coral text-white rounded-full px-6 py-3 font-sans font-medium hover:bg-coral-light transition-colors"
+            className="rounded-full bg-[var(--color-coral)] px-6 py-3 font-medium text-white transition-colors hover:bg-[var(--color-coral-dark)]"
           >
             Try again
           </button>
           <Link
             href="/"
-            className="border border-ink/20 rounded-full px-6 py-3 font-sans font-medium text-ink hover:bg-ink/5 transition-colors"
+            className="rounded-full border border-[var(--color-border-strong)] px-6 py-3 font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-warm-white)]"
           >
             Go home
           </Link>
         </div>
       </div>
     </div>
-  )
+  );
 }

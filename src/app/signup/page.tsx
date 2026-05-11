@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
+import { withTimeout } from "@/lib/async";
 
 function GoogleIcon() {
   return (
@@ -86,11 +87,15 @@ export default function SignupPage() {
     let signUpError: { message: string } | null = null;
     try {
       const supabase = createClient();
-      const result = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: fullName } },
-      });
+      const result = await withTimeout(
+        supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName } },
+        }),
+        10000,
+        "Sign up timed out",
+      );
       signUpError = result.error;
     } catch (err) {
       signUpError = { message: (err as Error).message };
@@ -100,6 +105,15 @@ export default function SignupPage() {
       setLoading(false);
       return;
     }
+    try {
+      const pending = window.localStorage.getItem("recipup_pending_dog_profile");
+      if (pending) {
+        window.localStorage.setItem("recipup_dog_profile", pending);
+        window.localStorage.removeItem("recipup_pending_dog_profile");
+        router.push("/recipes");
+        return;
+      }
+    } catch { /* ignore */ }
     router.push("/onboard");
   };
 
