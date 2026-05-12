@@ -5,7 +5,7 @@ import { withTimeout } from "@/lib/async";
 const PROTECTED = ["/dashboard", "/planner", "/library", "/account", "/dogs", "/pantry"];
 const AUTH_PAGES = ["/login", "/signup"];
 
-export async function updateSession(request: NextRequest) {
+async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isProtectedRoute = PROTECTED.some((p) => pathname.startsWith(p));
   const isAuthPage = AUTH_PAGES.some((p) => pathname.startsWith(p));
@@ -77,9 +77,7 @@ export async function updateSession(request: NextRequest) {
   return supabaseResponse;
 }
 
-export async function middleware(request: NextRequest) {
-  return updateSession(request);
-}
+export default updateSession;
 
 export const config = {
   matcher: [

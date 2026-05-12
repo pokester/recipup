@@ -102,6 +102,32 @@ CREATE TABLE IF NOT EXISTS public.recipe_generations (
   created_at        timestamptz NOT NULL DEFAULT now()
 );
 
+-- ------------------------------------------------------------
+-- health_logs
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.health_logs (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  dog_id            uuid NOT NULL REFERENCES public.dogs(id) ON DELETE CASCADE,
+  week_start        date NOT NULL,
+  weight_kg         numeric,
+  energy_level      text,
+  coat_score        numeric,
+  appetite          text,
+  itching           numeric,
+  joint_stiffness   numeric,
+  digestion         text,
+  vomiting          text,
+  notes             text,
+  recipe_adjustments jsonb NOT NULL DEFAULT '[]',
+  response_message  text,
+  vet_flag          boolean NOT NULL DEFAULT false,
+  vet_message       text,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  updated_at        timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(dog_id, week_start)
+);
+
 -- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
@@ -110,6 +136,7 @@ ALTER TABLE public.profiles         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dogs             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_recipes    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.recipe_generations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.health_logs      ENABLE ROW LEVEL SECURITY;
 
 -- profiles
 CREATE POLICY "Users can read own profile"
@@ -163,6 +190,19 @@ CREATE POLICY "Users can insert own generations"
   ON public.recipe_generations FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- health_logs
+CREATE POLICY "Users can read own health logs"
+  ON public.health_logs FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own health logs"
+  ON public.health_logs FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own health logs"
+  ON public.health_logs FOR UPDATE
+  USING (auth.uid() = user_id);
+
 -- ============================================================
 -- AUTO-CREATE PROFILE ON SIGNUP TRIGGER
 -- ============================================================
@@ -208,6 +248,10 @@ CREATE OR REPLACE TRIGGER dogs_updated_at
   BEFORE UPDATE ON public.dogs
   FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
 
+CREATE OR REPLACE TRIGGER health_logs_updated_at
+  BEFORE UPDATE ON public.health_logs
+  FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
 -- ============================================================
 -- USEFUL INDEXES
 -- ============================================================
@@ -223,6 +267,15 @@ CREATE INDEX IF NOT EXISTS saved_recipes_dog_id_idx
 
 CREATE INDEX IF NOT EXISTS recipe_generations_user_month_idx
   ON public.recipe_generations(user_id, created_at);
+
+CREATE INDEX IF NOT EXISTS health_logs_user_id_idx
+  ON public.health_logs(user_id);
+
+CREATE INDEX IF NOT EXISTS health_logs_dog_id_idx
+  ON public.health_logs(dog_id);
+
+CREATE INDEX IF NOT EXISTS health_logs_week_start_idx
+  ON public.health_logs(week_start);
 
 -- ============================================================
 -- PANTRY ITEMS

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -7,18 +7,106 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 // Skip integration tests if Supabase not configured
 const skipIfNoSupabase = !supabaseUrl || !supabaseKey ? describe.skip : describe;
 
+// Minimal typed schema for integration test table access
+type Database = {
+  public: {
+    Tables: {
+      dogs: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          breed: string;
+          weight_kg: number;
+          age_years: number;
+          sex: string;
+          activity_level: string;
+          goal: string;
+          health_conditions: string[];
+        };
+        Insert: {
+          user_id: string;
+          name: string;
+          breed: string;
+          weight_kg: number;
+          age_years: number;
+          sex: string;
+          activity_level: string;
+          goal: string;
+          health_conditions: string[];
+        };
+        Update: {
+          user_id?: string;
+          name?: string;
+          breed?: string;
+          weight_kg?: number;
+          age_years?: number;
+          sex?: string;
+          activity_level?: string;
+          goal?: string;
+          health_conditions?: string[];
+        };
+        Relationships: [];
+      };
+      meal_plans: {
+        Row: {
+          id: string;
+          user_id: string;
+          dog_id: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          dog_id: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          dog_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      recipe_generations: {
+        Row: {
+          id: string;
+          user_id: string;
+          dog_id: string;
+          recipes_generated: number;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          dog_id: string;
+          recipes_generated: number;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          dog_id?: string;
+          recipes_generated?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+    };
+    Views: {};
+    Functions: {};
+  };
+};
+
 // Mock user for testing
 const testUserEmail = `test-${Date.now()}@example.com`;
 const testUserPassword = "TestPassword123!";
 
-let supabase: ReturnType<typeof createClient>;
+let supabase: SupabaseClient<Database>;
 let testUserId: string;
 let testDogId: string;
 let testPlanId: string;
 
 skipIfNoSupabase("API Routes Integration Tests", () => {
   beforeAll(async () => {
-    supabase = createClient(supabaseUrl!, supabaseKey!);
+    supabase = createClient<Database, "public">(supabaseUrl ?? "", supabaseKey ?? "");
     // Sign up test user
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: testUserEmail,
@@ -71,7 +159,7 @@ skipIfNoSupabase("API Routes Integration Tests", () => {
 
   describe("POST /api/health-log", () => {
     it("should require authentication", async () => {
-      const anonSupabase = createClient(supabaseUrl, supabaseKey);
+      const anonSupabase = createClient<Database, "public">(supabaseUrl ?? "", supabaseKey ?? "");
       await anonSupabase.auth.signOut();
 
       const response = await fetch(
