@@ -179,6 +179,11 @@ export default function RecipesPage() {
         body: JSON.stringify({ ...profile, ...(pantryCtx ? { pantry_context: pantryCtx } : {}) }),
       });
 
+      if (res.status === 401) {
+        clearIntervalSafe();
+        router.push("/login");
+        return;
+      }
       if (res.status === 403 || res.status === 429) {
         const errJson = await res.json() as { error?: string };
         const code = errJson.error;
