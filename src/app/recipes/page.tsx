@@ -202,7 +202,7 @@ export default function RecipesPage() {
       clearIntervalSafe();
       setStatus("error");
     }
-  }, [clearIntervalSafe]);
+  }, [clearIntervalSafe, router]);
 
   useEffect(() => {
     try {
