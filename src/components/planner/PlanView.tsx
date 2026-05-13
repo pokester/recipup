@@ -130,6 +130,9 @@ export function PlanView({ planId }: { planId: string }) {
   const [swappingLoading, setSwappingLoading] = useState(false);
   const [swapError, setSwapError] = useState<string | null>(null);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
@@ -297,6 +300,26 @@ export function PlanView({ planId }: { planId: string }) {
     setAllDays((prev) => prev.map((d) => (d.id === day.id ? { ...d, is_pinned: newPinned } : d)));
   }, []);
 
+  const handleDeletePlan = useCallback(async () => {
+    if (!plan) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/delete-plan", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ plan_id: planId }),
+      });
+      if (!res.ok) throw new Error("Failed to delete plan");
+      router.push("/planner");
+    } catch (err) {
+      console.error("Delete plan error:", err);
+      setSwapError("Failed to delete plan. Please try again.");
+      setTimeout(() => setSwapError(null), 5000);
+    }
+    setDeleting(false);
+    setShowDeleteConfirm(false);
+  }, [plan, planId, router]);
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -345,12 +368,21 @@ export function PlanView({ planId }: { planId: string }) {
             </p>
           )}
         </div>
-        <Link
-          href={`/planner/${planId}/shopping`}
-          className="rounded-full bg-[var(--color-coral)] px-5 py-2.5 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
-        >
-          Shopping list →
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href={`/planner/${planId}/shopping`}
+            className="rounded-full bg-[var(--color-coral)] px-5 py-2.5 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+          >
+            Shopping list →
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="rounded-full border border-red-300 bg-red-50 px-5 py-2.5 text-sm font-semibold text-red-700 transition-transform hover:-translate-y-0.5 hover:bg-red-100"
+          >
+            Delete plan
+          </button>
+        </div>
       </div>
 
       {/* Monthly week tabs */}
@@ -652,6 +684,35 @@ export function PlanView({ planId }: { planId: string }) {
           ← All plans
         </Link>
       </div>
+
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 max-w-md rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-xl">
+            <h3 className="font-heading text-xl text-[var(--color-ink)]">Delete this plan?</h3>
+            <p className="mt-2 text-sm text-[var(--color-ink-500)]">
+              This will permanently delete the plan for {toTitleCase(dog?.name ?? "")} and all associated recipes. This cannot be undone.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 rounded-full border border-[var(--color-sand-deep)] py-2 text-sm font-semibold text-[var(--color-ink)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDeletePlan()}
+                disabled={deleting}
+                className="flex-1 rounded-full bg-red-600 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete plan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
