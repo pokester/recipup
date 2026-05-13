@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sanitisePromptPayload, sanitisePromptText } from "@/lib/prompt-safety";
-import { handleAPIError } from "@/lib/api-error";
+import { APIError, handleAPIError } from "@/lib/api-error";
 
 export const maxDuration = 60;
 
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   try {
     const body = sanitisePromptPayload(await req.json()) as RequestBody;
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return NextResponse.json({ message: "Missing API key" }, { status: 500 });
+    if (!apiKey) throw new APIError("missing_api_key", 500, "Recipe regeneration is not configured. Please set ANTHROPIC_API_KEY.");
 
     // Auth guard
     const supabase = await createClient();
@@ -187,14 +187,69 @@ Return this exact structure:
       clearTimeout(timeout);
     }
 
-    if (!res.ok) throw new Error(`Anthropic error (${res.status})`);
+    let json: Record<string, unknown> | null = null;
+    if (!res.ok) {
+      const bodyText = await res.text();
+      let details = bodyText;
+      try {
+        json = JSON.parse(bodyText) as Record<string, unknown>;
+        const errorField = json.error ?? json.message;
+        if (typeof errorField === "string") {
+          details = errorField;
+        } else if (errorField !== undefined) {
+          details = JSON.stringify(errorField);
+        } else {
+          details = bodyText;
+        }
+      } catch {
+        details = bodyText;
+      }
+
+      const isModelNotFound =
+        res.status === 404 &&
+        model === "claude-sonnet-4-20250514" &&
+        (details.includes("claude-sonnet-4-20250514") ||
+          (json?.error &&
+            typeof json.error === "object" &&
+            (json.error as Record<string, unknown>).type === "not_found_error"));
+
+      if (isModelNotFound) {
+        // Fallback to a supported model for users without access to the higher-tier model.
+        res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-beta": "prompt-caching-2024-07-31",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 4096,
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+                  { type: "text", text: userPrompt },
+                ],
+              },
+            ],
+            temperature: 0.6,
+          }),
+          signal: controller.signal,
+        });
+      }
+
+      if (!res.ok) throw new APIError("anthropic_error", 502, `Recipe regeneration service unavailable: ${details}`);
+    }
 
     const data = (await res.json()) as { content?: Array<{ type?: string; text?: string }> };
     const text = data.content?.find((c) => c.type === "text")?.text;
-    if (!text) throw new Error("No Claude response");
+    if (!text) throw new APIError("anthropic_error", 502, "No Claude response");
 
     const jsonText = extractFirstJson(text);
-    if (!jsonText) throw new Error("Claude did not return JSON");
+    if (!jsonText) throw new APIError("anthropic_error", 502, "Claude did not return JSON");
 
     const parsed = JSON.parse(jsonText) as RegenerateResponse;
     return NextResponse.json(parsed);

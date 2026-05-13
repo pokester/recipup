@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { calculateRecipeCost, compareToKibble, compareToCompetitors } from "@/lib/cost-estimator";
 import { analyseHealthLogs, buildHealthPromptContext, type HealthLog } from "@/lib/health-analysis";
 import { sanitisePromptPayload, sanitisePromptText } from "@/lib/prompt-safety";
-import { handleAPIError } from "@/lib/api-error";
+import { APIError, handleAPIError } from "@/lib/api-error";
 
 export const maxDuration = 60;
 
@@ -25,9 +25,9 @@ function extractFirstJson(text: string) {
   return raw.slice(firstBrace, lastBrace + 1);
 }
 
-async function callClaude(dogProfile: DogProfile, model: string, pantryContext?: string, costTarget?: string, healthContext?: string) {
+async function callClaude(dogProfile: DogProfile, model: string, pantryContext?: string, costTarget?: string, healthContext?: string, attempt = 0) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
+  if (!apiKey) throw new APIError("missing_api_key", 500, "Recipe generation is not configured. Please set ANTHROPIC_API_KEY.");
 
   const systemPrompt = `You are a canine nutritionist and cookbook author. You create personalised home-cooking recipes for dogs based on their profile. You are warm, knowledgeable, and precise. You always prioritise the dog's health and safety above all else.
 CRITICAL SAFETY RULES — never include these ingredients in any recipe: xylitol, grapes, raisins, onions, garlic, chives, leeks, chocolate, macadamia nuts, avocado, alcohol, caffeine, cooked bones, nutmeg.
@@ -139,14 +139,46 @@ Return this exact structure:
     clearTimeout(timeout);
   }
 
-  if (!res.ok) throw new Error(`Anthropic request failed (${res.status})`);
+  if (!res.ok) {
+    const bodyText = await res.text();
+    let details = bodyText;
+    let json: Record<string, unknown> | null = null;
+    try {
+      json = JSON.parse(bodyText) as Record<string, unknown>;
+      const errorField = json.error ?? json.message;
+      if (typeof errorField === "string") {
+        details = errorField;
+      } else if (errorField !== undefined) {
+        details = JSON.stringify(errorField);
+      } else {
+        details = bodyText;
+      }
+    } catch {
+      details = bodyText;
+    }
+
+    const isModelNotFound =
+      res.status === 404 &&
+      attempt === 0 &&
+      model === "claude-sonnet-4-20250514" &&
+      (details.includes("claude-sonnet-4-20250514") ||
+        json?.error &&
+        typeof json.error === "object" &&
+        (json.error as Record<string, unknown>).type === "not_found_error");
+
+    if (isModelNotFound) {
+      return callClaude(dogProfile, "claude-haiku-4-5-20251001", pantryContext, costTarget, healthContext, 1);
+    }
+
+    throw new APIError("anthropic_error", 502, `Recipe generation service unavailable: ${details}`);
+  }
 
   const data = (await res.json()) as { content?: Array<{ type?: string; text?: string }> };
   const text = data.content?.find((c) => c.type === "text")?.text;
-  if (!text) throw new Error("Missing Claude response text");
+  if (!text) throw new APIError("anthropic_error", 502, "Missing Claude response text");
 
   const jsonText = extractFirstJson(text);
-  if (!jsonText) throw new Error("Claude did not return JSON");
+  if (!jsonText) throw new APIError("anthropic_error", 502, "Claude did not return JSON");
 
   return JSON.parse(jsonText) as { recipes?: Array<{ safety_score?: number }> } & Record<string, unknown>;
 }

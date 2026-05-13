@@ -12,6 +12,7 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
     try {
       const dismissedUntil = localStorage.getItem(DISMISSED_KEY);
       if (dismissedUntil && new Date(dismissedUntil) > new Date()) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setVisible(false);
       }
     } catch {

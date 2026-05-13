@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyseHealthLogs, buildHealthPromptContext, type HealthLog } from "@/lib/health-analysis";
 import { sanitisePromptPayload, sanitisePromptText } from "@/lib/prompt-safety";
-import { handleAPIError } from "@/lib/api-error";
+import { APIError, handleAPIError } from "@/lib/api-error";
 
 export const maxDuration = 120;
 
@@ -59,9 +59,9 @@ function extractFirstJson(text: string): string | null {
   return raw.slice(firstBrace, lastBrace + 1);
 }
 
-async function generateWeekWithClaude(body: RequestBody, model: string): Promise<WeekResponse> {
+async function generateWeekWithClaude(body: RequestBody, model: string, attempt = 0): Promise<WeekResponse> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
+  if (!apiKey) throw new APIError("missing_api_key", 500, "Meal plan generation is not configured. Please set ANTHROPIC_API_KEY.");
 
   const systemPrompt = `You are a canine nutritionist and meal planning expert. You create personalised weekly meal plans for dogs — varied, balanced, and practical for home cooks.
 
@@ -192,14 +192,44 @@ Return this exact JSON structure (all 7 days, Monday=1 through Sunday=7):
     clearTimeout(timeout);
   }
 
-  if (!res.ok) throw new Error(`Anthropic error (${res.status})`);
+  if (!res.ok) {
+    const bodyText = await res.text();
+    let details = bodyText;
+    let json: Record<string, unknown> | null = null;
+    try {
+      json = JSON.parse(bodyText) as Record<string, unknown>;
+      const errorField = json.error ?? json.message;
+      if (typeof errorField === "string") {
+        details = errorField;
+      } else if (errorField !== undefined) {
+        details = JSON.stringify(errorField);
+      }
+    } catch {
+      details = bodyText;
+    }
+
+    const isModelNotFound =
+      res.status === 404 &&
+      attempt === 0 &&
+      model === "claude-sonnet-4-20250514" &&
+      (details.includes("claude-sonnet-4-20250514") ||
+        (json?.error &&
+          typeof json.error === "object" &&
+          (json.error as Record<string, unknown>).type === "not_found_error"));
+
+    if (isModelNotFound) {
+      return generateWeekWithClaude(body, "claude-haiku-4-5-20251001", 1);
+    }
+
+    throw new APIError("anthropic_error", 502, `Meal plan generation service unavailable: ${details}`);
+  }
 
   const data = (await res.json()) as { content?: Array<{ type?: string; text?: string }> };
   const text = data.content?.find((c) => c.type === "text")?.text;
-  if (!text) throw new Error("No Claude response text");
+  if (!text) throw new APIError("anthropic_error", 502, "No Claude response text");
 
   const jsonText = extractFirstJson(text);
-  if (!jsonText) throw new Error("Claude did not return JSON");
+  if (!jsonText) throw new APIError("anthropic_error", 502, "Claude did not return JSON");
 
   return JSON.parse(jsonText) as WeekResponse;
 }

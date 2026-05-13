@@ -141,6 +141,7 @@ export default function RecipesPage() {
   const [expandedCostId, setExpandedCostId] = useState<string | null>(null);
   const [expandedCompetitorId, setExpandedCompetitorId] = useState<string | null>(null);
   const [showCostUpgrade, setShowCostUpgrade] = useState(false);
+  const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
 
   const intervalRef = useRef<number | null>(null);
 
@@ -172,7 +173,10 @@ export default function RecipesPage() {
     clearIntervalSafe();
     intervalRef.current = window.setInterval(() => setMessageIndex((i) => (i + 1) % 5), 2000);
 
+    let apiError: string | null = null;
+    let isApiError = false;
     try {
+      setApiErrorMessage(null);
       const res = await fetch("/api/generate-recipes", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -192,7 +196,13 @@ export default function RecipesPage() {
         clearIntervalSafe();
         return;
       }
-      if (!res.ok) throw new Error("Recipe generation failed");
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null) as { message?: string } | null;
+        apiError = errJson?.message ?? null;
+        isApiError = true;
+        if (apiError) setApiErrorMessage(apiError);
+        throw new Error("Recipe generation failed");
+      }
 
       const json = (await res.json()) as GenerateRecipesResponse;
       setData(json);
@@ -200,7 +210,12 @@ export default function RecipesPage() {
       clearIntervalSafe();
     } catch {
       clearIntervalSafe();
-      setStatus("error");
+      if (isApiError) {
+        setStatus("error");
+      } else {
+        setApiErrorMessage("Unable to generate recipes right now. Please try again later.");
+        setStatus("error");
+      }
     }
   }, [clearIntervalSafe, router]);
 
@@ -345,7 +360,7 @@ export default function RecipesPage() {
             ) : (
               <>
                 <div className="font-heading text-2xl text-[var(--color-ink)]">Something went wrong.</div>
-                <p className="mt-3 text-[var(--color-ink-500)]">It happens occasionally — please try again. If the problem persists, try updating {displayDogName}&apos;s profile.</p>
+                <p className="mt-3 text-[var(--color-ink-500)]">{apiErrorMessage ?? `It happens occasionally — please try again. If the problem persists, try updating ${displayDogName}&apos;s profile.`}</p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
                   <button type="button" onClick={() => dogProfile && fetchRecipes(dogProfile)} className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-40" disabled={!dogProfile}>Try again</button>
                   <button type="button" onClick={() => router.push("/onboard")} className="rounded-full border border-[var(--color-sand-deep)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]">Edit profile</button>
