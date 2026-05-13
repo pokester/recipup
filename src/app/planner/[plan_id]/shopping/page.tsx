@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { calculateRecipeCost, compareToCompetitors } from "@/lib/cost-estimator";
+import { PrintShoppingListButton } from "@/components/planner/PrintShoppingListButton";
 
 type Ingredient = {
   name: string;
@@ -213,9 +214,7 @@ export default async function ShoppingPage({ params }: { params: Promise<{ plan_
 
           {/* Actions */}
           <div className="mb-12 flex gap-4">
-            <button type="button" onClick={undefined} className="rounded-full border border-[var(--color-ink-300)] px-5 py-2.5 text-sm font-semibold text-[var(--color-ink)]">
-              Print list
-            </button>
+            <PrintShoppingListButton />
           </div>
         </>
       )}
