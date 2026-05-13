@@ -37,6 +37,20 @@ function passwordStrength(pw: string): { label: string; color: string; width: st
   return { label: "Strong", color: "bg-green-500", width: "w-full" };
 }
 
+function mapSignupErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("over_email_send_rate_limit") || normalized.includes("rate limit")) {
+    return "Too many signup emails have been sent. Please wait a few minutes and try again.";
+  }
+  if (normalized.includes("invalid email") || normalized.includes("invalid input syntax") || normalized.includes("email address is invalid")) {
+    return "Please use a valid email address.";
+  }
+  if (normalized.includes("password")) {
+    return "Password must be at least 8 characters.";
+  }
+  return message;
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
@@ -101,7 +115,7 @@ export default function SignupPage() {
       signUpError = { message: (err as Error).message };
     }
     if (signUpError) {
-      setError(signUpError.message);
+      setError(mapSignupErrorMessage(signUpError.message));
       setLoading(false);
       return;
     }

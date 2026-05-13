@@ -1,20 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 const DISMISSED_KEY = "trial_banner_dismissed_until";
 
 export function TrialBanner({ daysLeft }: { daysLeft: number }) {
-  const [visible, setVisible] = useState(() => {
-    if (typeof window === "undefined") return false;
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
     try {
       const dismissedUntil = localStorage.getItem(DISMISSED_KEY);
-      return !(dismissedUntil && new Date(dismissedUntil) > new Date());
+      if (dismissedUntil && new Date(dismissedUntil) > new Date()) {
+        setVisible(false);
+      }
     } catch {
-      return true;
+      // ignore
     }
-  });
+  }, []);
 
   const dismiss = () => {
     try {
