@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { FaqAccordion } from "@/components/pricing/FaqAccordion";
+import { createClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 const FREE_FEATURES = [
   "Up to 3 recipe generations/month",
@@ -35,7 +38,23 @@ const FOUNDING_FEATURES = [
   "Direct input on what we build next",
 ];
 
-export default function PricingPage() {
+const FOUNDING_CAP = 500;
+
+export default async function PricingPage() {
+  let foundingCount = 0;
+  try {
+    const supabase = await createClient();
+    const { count } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("subscription_tier", "founding");
+    foundingCount = count ?? 0;
+  } catch {
+    foundingCount = 0;
+  }
+  const foundingFull = foundingCount >= FOUNDING_CAP;
+  const foundingSpotsLeft = Math.max(0, FOUNDING_CAP - foundingCount);
+
   return (
     <div>
       {/* ── HERO ── */}
@@ -48,9 +67,9 @@ export default function PricingPage() {
           <p className="mx-auto mt-4 max-w-xl text-[var(--color-ink-soft)]">
             Every account starts with a 14-day free trial of Pack Pro. No card required. Cancel any time.
           </p>
-          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-[var(--color-butter-light)] bg-[var(--color-butter-muted)] p-4">
             <p className="text-sm text-[var(--color-ink)]">
-              🎁 14-day free trial — full Pack Pro access from the moment you sign up.
+              Every account starts with 14 days of full Pack Pro access. At trial end, choose your plan — or use Recipup free.
             </p>
           </div>
         </div>
@@ -110,7 +129,7 @@ export default function PricingPage() {
                 Start 14-day free trial →
               </Link>
               <p className="mt-3 text-center text-xs text-[var(--color-warm-white)]/70">
-                No card required. Cancel any time.
+                Trial gives you full Pack Pro access for 14 days. Then choose your plan.
               </p>
             </div>
 
@@ -141,12 +160,17 @@ export default function PricingPage() {
 
             {/* Founding Member */}
             <div className="flex flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8">
-              <div className="mb-3 self-start rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-[var(--color-ink)]">
-                FIRST 500 ONLY
+              <div className="mb-3 self-start rounded-full bg-[var(--color-forest-muted)] px-3 py-1 text-xs font-semibold text-[var(--color-forest)]">
+                {foundingFull ? "FOUNDING CLOSED" : "FIRST 500 ONLY"}
               </div>
               <p className="eyebrow">Founding Member</p>
               <p className="mt-4 font-heading text-4xl text-[var(--color-ink)]">£1.50</p>
               <p className="text-sm text-[var(--color-ink-soft)]">per month (£17.99/yr) — locked forever</p>
+              <p className="mt-1 text-xs text-[var(--color-ink-300)]">
+                {foundingFull
+                  ? "All 500 founding spots have been claimed."
+                  : `${foundingCount} of ${FOUNDING_CAP} spots claimed — ${foundingSpotsLeft} remaining`}
+              </p>
               <p className="mt-4 text-sm text-[var(--color-ink-soft)]">
                 Join the first 500. Lock in the best price and help shape what Recipup becomes.
               </p>
@@ -158,14 +182,20 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/signup"
-                className="mt-8 block rounded-full bg-[var(--color-forest)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
-              >
-                Claim founding spot →
-              </Link>
-              <p className="mt-3 text-center text-xs text-[var(--color-ink-soft)]">
-                Limited to the first 500 members.
+              {foundingFull ? (
+                <div className="mt-8 rounded-full border border-[var(--color-border)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-ink-300)]">
+                  Founding spots are full
+                </div>
+              ) : (
+                <Link
+                  href="/signup?plan=founding"
+                  className="mt-8 block rounded-full bg-[var(--color-forest)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+                >
+                  Claim founding spot →
+                </Link>
+              )}
+              <p className="mt-3 text-center text-xs text-[var(--color-ink-300)]">
+                {foundingFull ? "See Pack or Pack Pro above." : "No card required. Cancel any time."}
               </p>
             </div>
           </div>

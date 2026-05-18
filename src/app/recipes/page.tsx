@@ -307,12 +307,12 @@ export default function RecipesPage() {
     <div className="min-h-screen bg-[var(--color-oat)]">
       {/* Cost upgrade modal */}
       {showCostUpgrade && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8 shadow-[var(--shadow-lift)]">
-            <h2 className="font-serif text-2xl text-[var(--color-ink)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-8 shadow-[var(--shadow-lift)]">
+            <h2 className="font-heading text-2xl text-[var(--color-ink)]">
               See exactly what you&apos;re spending
             </h2>
-            <p className="mt-3 text-[var(--color-muted)]">
+            <p className="mt-3 text-[var(--color-ink-500)]">
               Upgrade to Pack to see the cost per day for every recipe, compare
               to fresh food delivery services, and track exactly what you&apos;re
               saving.
@@ -320,14 +320,14 @@ export default function RecipesPage() {
             <div className="mt-6 flex flex-col gap-3">
               <a
                 href="/account"
-                className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-center text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-center text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
               >
                 Upgrade to Pack →
               </a>
               <button
                 type="button"
                 onClick={() => setShowCostUpgrade(false)}
-                className="rounded-full border border-[var(--color-border)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]"
+                className="rounded-full border border-[var(--color-sand-deep)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]"
               >
                 Maybe later
               </button>
@@ -342,10 +342,10 @@ export default function RecipesPage() {
           <div className="mb-6">
             <Logo height={48} />
           </div>
-          <p className="font-serif text-2xl font-semibold text-[var(--color-coral)]">
+          <p className="font-heading text-2xl font-semibold text-[var(--color-coral)]">
             <span className="animate-pulse">{rotatingMessages[messageIndex]}</span>
           </p>
-          <p className="mt-3 text-sm text-[var(--color-muted)]">
+          <p className="mt-3 text-sm text-[var(--color-ink-500)]">
             Building something good for {dogProfile?.dog_name ?? "your dog"}...
           </p>
         </div>
@@ -354,29 +354,29 @@ export default function RecipesPage() {
       {/* Error state */}
       {status === "error" && (
         <div className="mx-auto max-w-md px-6 py-20">
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8 text-center shadow-[var(--shadow-card)]">
+          <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-8 text-center shadow-[var(--shadow-card)]">
             {limitError === "monthly_limit_reached" ? (
               <>
-                <div className="font-serif text-2xl text-[var(--color-ink)]">
+                <div className="font-heading text-2xl text-[var(--color-ink)]">
                   Monthly limit reached
                 </div>
-                <p className="mt-3 text-[var(--color-muted)]">
+                <p className="mt-3 text-[var(--color-ink-500)]">
                   Free accounts get 3 recipe generations per month. Upgrade to
                   Pack for unlimited recipes.
                 </p>
                 <a
                   href="/pricing"
-                  className="mt-6 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                  className="mt-6 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
                 >
                   Upgrade to Pack →
                 </a>
               </>
             ) : limitError === "rate_limit_exceeded" ? (
               <>
-                <div className="font-serif text-2xl text-[var(--color-ink)]">
+                <div className="font-heading text-2xl text-[var(--color-ink)]">
                   You&apos;ve been busy!
                 </div>
-                <p className="mt-3 text-[var(--color-muted)]">
+                <p className="mt-3 text-[var(--color-ink-500)]">
                   You&apos;ve generated a lot of recipes this hour — take a short
                   break and try again in a little while.
                 </p>
@@ -386,17 +386,17 @@ export default function RecipesPage() {
                     setLimitError(null);
                     if (dogProfile) void fetchRecipes(dogProfile, pantryContext);
                   }}
-                  className="mt-6 inline-block rounded-full border border-[var(--color-border)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]"
+                  className="mt-6 inline-block rounded-full border border-[var(--color-sand-deep)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]"
                 >
                   Try again
                 </button>
               </>
             ) : (
               <>
-                <div className="font-serif text-2xl text-[var(--color-ink)]">
+                <div className="font-heading text-2xl text-[var(--color-ink)]">
                   Something went wrong.
                 </div>
-                <p className="mt-3 text-[var(--color-muted)]">
+                <p className="mt-3 text-[var(--color-ink-500)]">
                   {apiErrorMessage ??
                     `It happens occasionally — please try again. If the problem persists, try updating ${displayDogName}&apos;s profile.`}
                 </p>
@@ -404,7 +404,7 @@ export default function RecipesPage() {
                   <button
                     type="button"
                     onClick={() => dogProfile && void fetchRecipes(dogProfile)}
-                    className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-40"
+                    className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-40"
                     disabled={!dogProfile}
                   >
                     Try again
@@ -412,7 +412,7 @@ export default function RecipesPage() {
                   <button
                     type="button"
                     onClick={() => router.push("/onboard")}
-                    className="rounded-full border border-[var(--color-border)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]"
+                    className="rounded-full border border-[var(--color-sand-deep)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]"
                   >
                     Edit profile
                   </button>
@@ -426,17 +426,17 @@ export default function RecipesPage() {
       {/* Missing profile */}
       {status === "missing_profile" && (
         <div className="mx-auto max-w-md px-6 py-20">
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8 text-center shadow-[var(--shadow-card)]">
-            <div className="font-serif text-2xl text-[var(--color-ink)]">
+          <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-8 text-center shadow-[var(--shadow-card)]">
+            <div className="font-heading text-2xl text-[var(--color-ink)]">
               Start with your dog&apos;s profile
             </div>
-            <p className="mt-3 text-[var(--color-muted)]">
+            <p className="mt-3 text-[var(--color-ink-500)]">
               We need a few details about your dog before building recipes.
             </p>
             <button
               type="button"
               onClick={() => router.push("/onboard")}
-              className="mt-6 rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+              className="mt-6 rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
             >
               Build my dog&apos;s profile →
             </button>
@@ -446,7 +446,7 @@ export default function RecipesPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[var(--color-border)] bg-[var(--color-warm-white)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)] shadow-[var(--shadow-lift)]">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)] shadow-[var(--shadow-lift)]">
           {toast}
         </div>
       )}
@@ -456,22 +456,21 @@ export default function RecipesPage() {
         <div className="mx-auto max-w-5xl px-6 py-10 md:px-8">
           {/* Page header */}
           <header className="pb-10">
-            <h1 className="font-serif text-4xl font-semibold text-[var(--color-ink)]">
+            <h1 className="font-heading text-4xl font-semibold text-[var(--color-ink)]">
               Recipes for {displayDogName}
             </h1>
-            <p className="mt-3 text-lg text-[var(--color-muted)] max-w-2xl">
+            <p className="mt-3 text-lg text-[var(--color-ink-500)] max-w-2xl">
               Each recipe is personalised to {displayDogName}&apos;s profile,
               breed, and health. Here&apos;s the thinking behind each one.
             </p>
-            <p className="mt-2 text-sm text-[var(--color-subtle)]">
+            <p className="mt-2 text-sm text-[var(--color-ink-300)]">
               Daily target: {data.daily_calories} kcal
             </p>
 
             {/* Global vet flag */}
             {data.vet_flag && data.vet_message && (
               <div
-                className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900"
-                style={{ borderLeft: "4px solid #F59E0B" }}
+                className="mt-5 rounded-2xl border border-[var(--color-coral-muted)] bg-[var(--color-coral-muted)] px-5 py-4 text-sm text-[var(--color-ink-700)]"
               >
                 <p>{data.vet_message}</p>
                 <p className="mt-2 font-medium">
@@ -511,9 +510,9 @@ export default function RecipesPage() {
             {/* Aggregated shopping list */}
             {(shoppingItems.buy.length > 0 ||
               shoppingItems.topUp.length > 0) && (
-              <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
-                <h3 className="font-serif text-xl text-[var(--color-ink)]">
-                  What to buy for this plan 🛒
+              <section className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
+                <h3 className="font-heading text-xl text-[var(--color-ink)]">
+                  What to buy for this plan
                 </h3>
                 <div className="mt-5 grid gap-6 md:grid-cols-2">
                   {shoppingItems.buy.length > 0 && (
@@ -521,7 +520,7 @@ export default function RecipesPage() {
                       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-coral)]">
                         Need to buy
                       </p>
-                      <div className="divide-y divide-[var(--color-border)]">
+                      <div className="divide-y divide-[var(--color-sand-deep)]">
                         {shoppingItems.buy.map((item) => (
                           <div
                             key={item.name}
@@ -531,14 +530,14 @@ export default function RecipesPage() {
                               {item.name}
                             </span>
                             <div className="flex items-center gap-3">
-                              <span className="text-xs text-[var(--color-muted)]">
+                              <span className="text-xs text-[var(--color-ink-500)]">
                                 {formatQuantity(item.totalGrams)} g
                               </span>
                               <a
                                 href={`https://www.tesco.com/groceries/en-GB/search?query=${encodeURIComponent(item.name)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="rounded-full bg-[var(--color-coral)] px-3 py-1 text-xs font-semibold text-white"
+                                className="rounded-full bg-[var(--color-coral)] px-3 py-1 text-xs font-semibold text-[var(--color-warm-white)]"
                               >
                                 Buy
                               </a>
@@ -550,10 +549,10 @@ export default function RecipesPage() {
                   )}
                   {shoppingItems.topUp.length > 0 && (
                     <div>
-                      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-amber-700">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-coral-dark)]">
                         Running low — top up soon
                       </p>
-                      <div className="divide-y divide-amber-100">
+                      <div className="divide-y divide-[var(--color-sand-deep)]">
                         {shoppingItems.topUp.map((item) => (
                           <div
                             key={item.name}
@@ -562,7 +561,7 @@ export default function RecipesPage() {
                             <span className="text-sm text-[var(--color-ink)]">
                               {item.name}
                             </span>
-                            <span className="text-xs text-amber-700">
+                            <span className="text-xs text-[var(--color-ink-500)]">
                               {formatQuantity(item.totalGrams)} g
                             </span>
                           </div>
@@ -571,7 +570,7 @@ export default function RecipesPage() {
                     </div>
                   )}
                 </div>
-                <p className="mt-5 text-xs text-[var(--color-subtle)]">
+                <p className="mt-5 text-xs text-[var(--color-ink-300)]">
                   Some shopping links are affiliate links. We may earn a small
                   commission — at no extra cost to you — which helps keep Recipup
                   free.
@@ -580,47 +579,49 @@ export default function RecipesPage() {
             )}
 
             {/* Actions row */}
-            <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-              <button
-                type="button"
-                onClick={() => router.push("/onboard")}
-                className="rounded-full border border-[var(--color-border)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]"
-              >
-                ← Edit profile
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <button
                 type="button"
                 onClick={() =>
                   dogProfile && void fetchRecipes(dogProfile, pantryContext)
                 }
                 disabled={!dogProfile}
-                className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-40"
+                className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-40"
               >
-                Create new recipes
+                Generate new recipes →
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    window.localStorage.removeItem("recipup_dog_profile");
-                  } catch {
-                    /* ignore */
-                  }
-                  router.push("/onboard");
-                }}
-                className="rounded-full border border-[var(--color-border)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)]"
-              >
-                Add another dog
-              </button>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => router.push("/onboard")}
+                  className="text-sm text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
+                >
+                  ← Edit profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      window.localStorage.removeItem("recipup_dog_profile");
+                    } catch {
+                      /* ignore */
+                    }
+                    router.push("/onboard");
+                  }}
+                  className="text-sm text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
+                >
+                  Add another dog
+                </button>
+              </div>
             </div>
 
             {/* Empty state (shown when no recipes returned) */}
             {data.recipes.length === 0 && (
-              <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-10 text-center">
-                <p className="font-serif text-xl text-[var(--color-ink)] mb-3">
+              <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
+                <p className="font-heading text-xl text-[var(--color-ink)] mb-3">
                   No recipes yet
                 </p>
-                <p className="text-sm text-[var(--color-muted)]">
+                <p className="text-sm text-[var(--color-ink-500)]">
                   Create your first recipe by clicking &ldquo;Create new
                   recipes&rdquo; above. We&apos;ll show you exactly why each
                   recipe is built for {displayDogName}.

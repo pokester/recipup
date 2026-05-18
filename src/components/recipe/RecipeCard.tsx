@@ -189,6 +189,15 @@ export function RecipeCard({
   const [costExpanded, setCostExpanded] = useState(false);
   const [competitorExpanded, setCompetitorExpanded] = useState(false);
 
+  /* Macro caloric breakdown */
+  const proteinKcal = Math.round(recipe.nutrition_per_day.protein_g * 4);
+  const fatKcal = Math.round(recipe.nutrition_per_day.fat_g * 9);
+  const carbsKcal = Math.round(recipe.nutrition_per_day.carbs_g * 4);
+  const macroKcalTotal = proteinKcal + fatKcal + carbsKcal;
+  const proteinPct = macroKcalTotal > 0 ? Math.round((proteinKcal / macroKcalTotal) * 100) : 0;
+  const fatPct = macroKcalTotal > 0 ? Math.round((fatKcal / macroKcalTotal) * 100) : 0;
+  const carbsPct = macroKcalTotal > 0 ? 100 - proteinPct - fatPct : 0;
+
   const currency = market === "nl" ? "€" : "£";
   const supermarket = market === "nl" ? "Albert Heijn" : "Tesco";
   const dailyCost =
@@ -309,26 +318,26 @@ export function RecipeCard({
         </p>
         <ul className="space-y-1.5 text-sm text-[var(--color-ink)]">
           {dogIdentity && (
-            <li>
-              <span className="mr-1.5">🐕</span>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-sage)] mt-1.5 shrink-0" aria-hidden="true" />
               <strong>{dogIdentity}</strong>
             </li>
           )}
           {recipe.breed_notes && (
-            <li>
-              <span className="mr-1.5">📌</span>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-sage-light)] mt-1.5 shrink-0" aria-hidden="true" />
               {recipe.breed_notes}
             </li>
           )}
           {dogHealthConditions && (
-            <li>
-              <span className="mr-1.5">💚</span>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-sage)] mt-1.5 shrink-0" aria-hidden="true" />
               {dogHealthConditions}
             </li>
           )}
           {dogAllergens && (
-            <li>
-              <span className="mr-1.5">⚠️</span>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-coral)] mt-1.5 shrink-0" aria-hidden="true" />
               {dogAllergens}
             </li>
           )}
@@ -345,77 +354,137 @@ export function RecipeCard({
 
         {/* Nutrition Per Day */}
         <ExpandableSection title="Nutrition Per Day" defaultOpen={true}>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 pt-2">
-            {(
-              [
-                {
-                  label: "Calories",
-                  value: recipe.nutrition_per_day.calories,
-                  unit: "kcal",
-                  color: "var(--color-ink)",
-                },
-                {
-                  label: "Protein",
-                  value: recipe.nutrition_per_day.protein_g,
-                  unit: "g",
-                  color: "var(--color-coral)",
-                },
-                {
-                  label: "Fat",
-                  value: recipe.nutrition_per_day.fat_g,
-                  unit: "g",
-                  color: "var(--color-coral)",
-                },
-                {
-                  label: "Carbs",
-                  value: recipe.nutrition_per_day.carbs_g,
-                  unit: "g",
-                  color: "var(--color-ink)",
-                },
-              ] as const
-            ).map(({ label, value, unit, color }) => (
-              <div key={label}>
-                <div className="text-xs text-[var(--color-muted)] uppercase tracking-wider mb-1">
-                  {label}
-                </div>
-                <div className="text-2xl font-semibold" style={{ color }}>
-                  {value}
-                </div>
-                <div className="text-xs text-[var(--color-muted)]">{unit}/day</div>
-              </div>
-            ))}
+          {/* Calorie hero */}
+          <div className="flex items-baseline gap-2 pt-3 pb-4">
+            <span className="font-serif text-[2.5rem] font-semibold leading-none text-[var(--color-ink)]">
+              {recipe.nutrition_per_day.calories}
+            </span>
+            <span className="text-sm text-[var(--color-muted)]">kcal / day</span>
           </div>
+
+          {/* Macro proportion bar */}
+          {macroKcalTotal > 0 && (
+            <>
+              <div className="flex rounded-full overflow-hidden h-2 mb-2" role="img" aria-label={`Macros: protein ${proteinPct}%, fat ${fatPct}%, carbs ${carbsPct}%`}>
+                <div style={{ width: `${proteinPct}%` }} className="bg-[var(--color-sage)]" />
+                <div style={{ width: `${fatPct}%` }} className="bg-[var(--color-coral)]" />
+                <div style={{ width: `${carbsPct}%` }} className="bg-[var(--color-butter)]" />
+              </div>
+              <div className="flex justify-between mb-5 px-0.5">
+                <span className="flex items-center gap-1 text-[0.65rem] text-[var(--color-muted)]">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-sage)]" aria-hidden="true" />
+                  Protein {proteinPct}%
+                </span>
+                <span className="flex items-center gap-1 text-[0.65rem] text-[var(--color-muted)]">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-coral)]" aria-hidden="true" />
+                  Fat {fatPct}%
+                </span>
+                <span className="flex items-center gap-1 text-[0.65rem] text-[var(--color-muted)]">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-butter)]" aria-hidden="true" />
+                  Carbs {carbsPct}%
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* Macro detail cards */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-[var(--color-sage-muted)] p-3">
+              <div className="text-[0.6rem] font-semibold text-[var(--color-forest)] uppercase tracking-widest mb-2.5">
+                Protein
+              </div>
+              <div className="font-semibold text-[var(--color-ink)] text-lg leading-none">
+                {recipe.nutrition_per_day.protein_g}g
+              </div>
+              {macroKcalTotal > 0 && (
+                <div className="text-[0.65rem] text-[var(--color-muted)] mt-1.5 leading-snug">
+                  {proteinKcal} kcal
+                  <br />
+                  {proteinPct}% of cals
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-xl bg-[var(--color-coral-muted)] p-3">
+              <div className="text-[0.6rem] font-semibold text-[var(--color-coral)] uppercase tracking-widest mb-2.5">
+                Fat
+              </div>
+              <div className="font-semibold text-[var(--color-ink)] text-lg leading-none">
+                {recipe.nutrition_per_day.fat_g}g
+              </div>
+              {macroKcalTotal > 0 && (
+                <div className="text-[0.65rem] text-[var(--color-muted)] mt-1.5 leading-snug">
+                  {fatKcal} kcal
+                  <br />
+                  {fatPct}% of cals
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-xl bg-[var(--color-butter-muted)] p-3">
+              <div className="text-[0.6rem] font-semibold text-[var(--color-ink-500)] uppercase tracking-widest mb-2.5">
+                Carbs
+              </div>
+              <div className="font-semibold text-[var(--color-ink)] text-lg leading-none">
+                {recipe.nutrition_per_day.carbs_g}g
+              </div>
+              {macroKcalTotal > 0 && (
+                <div className="text-[0.65rem] text-[var(--color-muted)] mt-1.5 leading-snug">
+                  {carbsKcal} kcal
+                  <br />
+                  {carbsPct}% of cals
+                </div>
+              )}
+            </div>
+          </div>
+
           {recipe.nutrition_per_day.notes && (
-            <p className="mt-4 text-sm text-[var(--color-ink)] bg-[var(--color-sage-muted)] rounded-lg p-3">
-              ✓ {recipe.nutrition_per_day.notes}
-            </p>
+            <div className="mt-4 rounded-lg bg-[var(--color-sage-muted)] px-4 py-3">
+              <p className="text-sm text-[var(--color-forest)] leading-relaxed">
+                {recipe.nutrition_per_day.notes}
+              </p>
+            </div>
           )}
         </ExpandableSection>
 
         {/* What This Recipe Covers */}
-        <ExpandableSection title="What This Recipe Covers" defaultOpen={true}>
+        <ExpandableSection title="Nutritional Completeness" defaultOpen={true}>
           <div className="pt-2 space-y-3">
             <div
-              className={`rounded-lg p-4 ${
+              className={`rounded-xl p-4 ${
                 isComplete
                   ? "bg-[var(--color-sage-muted)]"
                   : "bg-[var(--color-butter-muted)]"
               }`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span>{isComplete ? "✅" : "ℹ️"}</span>
-                <span className="text-sm font-semibold text-[var(--color-ink)]">
-                  {isComplete
-                    ? "Complete & balanced"
-                    : "Supplement support recommended"}
-                </span>
+              <div className="flex items-start gap-3">
+                <div
+                  className="mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{
+                    background: isComplete ? "var(--color-sage)" : "var(--color-butter)",
+                  }}
+                >
+                  {isComplete ? (
+                    <svg viewBox="0 0 12 12" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                      <path d="M2.5 6l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 12 12" className="w-3 h-3 text-[var(--color-ink)]" fill="currentColor" aria-hidden="true">
+                      <path d="M6 2a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 6 2zm0 6.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5z" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-ink)] leading-snug">
+                    {isComplete ? "Complete & balanced" : "Supplement support recommended"}
+                  </p>
+                  <p className="text-sm text-[var(--color-ink-500)] mt-1 leading-relaxed">{coverageSummary}</p>
+                </div>
               </div>
-              <p className="text-sm text-[var(--color-ink)]">{coverageSummary}</p>
             </div>
             {supplements.length > 0 && !isComplete && (
               <p className="text-sm text-[var(--color-muted)]">
-                See the Supplements section below to complete {dogName}&apos;s
-                daily nutrition.
+                See Supplements below to complete {dogName}&apos;s daily nutrition.
               </p>
             )}
           </div>
@@ -598,9 +667,6 @@ export function RecipeCard({
                         }`}
                       >
                         <p className="font-semibold text-[var(--color-ink)]">
-                          {recipe.kibble_comparison.cheaper_than_kibble
-                            ? "💚"
-                            : "💛"}{" "}
                           {recipe.kibble_comparison.message_honest}
                         </p>
                         <p className="text-[var(--color-muted)] mt-1">
@@ -712,7 +778,7 @@ export function RecipeCard({
             ) : (
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-oat)] p-6 text-center">
                 <p className="text-sm font-semibold text-[var(--color-ink)] mb-1">
-                  🔒 See cost per day
+                  Cost per day
                 </p>
                 <p className="text-sm text-[var(--color-muted)] mb-4">
                   Upgrade to Pack to see costs, compare to fresh delivery, and
@@ -723,7 +789,7 @@ export function RecipeCard({
                   onClick={onCostUpgradeClick}
                   className="rounded-full bg-[var(--color-coral)] text-white px-5 py-2 text-sm font-semibold hover:bg-[var(--color-coral-light)] transition-colors"
                 >
-                  Upgrade to Pack →
+                  Upgrade to Pack
                 </button>
               </div>
             )}
@@ -734,8 +800,10 @@ export function RecipeCard({
         <ExpandableSection title="Safety & Cautions" defaultOpen={false}>
           <div className="pt-2 space-y-3">
             {vetFlag && vetMessage && (
-              <div className="bg-[var(--color-coral-muted)] border border-[var(--color-coral)] rounded-lg p-4 flex gap-3">
-                <span className="text-lg shrink-0">⚠️</span>
+              <div className="bg-[var(--color-coral-muted)] border border-[var(--color-coral)] rounded-xl p-4 flex gap-3">
+                <svg viewBox="0 0 20 20" className="w-5 h-5 text-[var(--color-coral)] shrink-0 mt-0.5" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" clipRule="evenodd" />
+                </svg>
                 <div>
                   <p className="font-semibold text-[var(--color-ink)] text-sm">
                     Vet Consultation Recommended

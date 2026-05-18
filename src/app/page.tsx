@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { WaitlistForm } from "@/components/home/WaitlistForm";
 import { createClient } from "@/lib/supabase/server";
 import { withTimeout } from "@/lib/async";
 
@@ -114,10 +113,32 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Right: image placeholder */}
-            <div className="aspect-[4/3] w-full rounded-2xl bg-[var(--color-sand-deep)] flex flex-col items-center justify-center gap-2 text-[var(--color-ink-300)]">
-              <span className="text-4xl">📷</span>
-              <span className="text-sm">Dog beside kitchen counter, natural light</span>
+            {/* Right: recipe preview card */}
+            <div className="rounded-2xl bg-[var(--color-sand)] p-8 flex flex-col gap-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-coral-muted)] font-heading text-sm font-semibold text-[var(--color-coral)]">R</div>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-ink)]">Rory&apos;s Wednesday recipe</p>
+                  <p className="text-xs text-[var(--color-ink-300)]">Golden retriever · 28kg · Adult</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  { name: "Chicken breast", amount: "312g" },
+                  { name: "Sweet potato", amount: "180g" },
+                  { name: "Broccoli", amount: "95g" },
+                  { name: "Sardines in spring water", amount: "50g" },
+                  { name: "Sunflower oil", amount: "8ml" },
+                ].map(({ name, amount }) => (
+                  <div key={name} className="flex items-center justify-between text-sm">
+                    <span className="text-[var(--color-ink-500)]">{name}</span>
+                    <span className="font-semibold text-[var(--color-ink)]">{amount}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-xl bg-[var(--color-forest-muted)] px-4 py-3">
+                <p className="text-xs text-[var(--color-forest)]">FEDIAF compliant · 1,248 kcal target met</p>
+              </div>
             </div>
           </div>
         </div>
@@ -151,31 +172,27 @@ export default async function Home() {
           <div className="mt-12 grid gap-10 md:grid-cols-3">
             {[
               {
-                placeholder: "Hands typing on phone",
                 bg: "bg-[var(--color-sand)]",
                 step: "Step 1",
                 title: "Tell us about your dog",
                 body: "Breed, age, weight, health conditions — the more we know, the better the recipes. Takes about two minutes.",
               },
               {
-                placeholder: "Ingredient layout overhead",
                 bg: "bg-[var(--color-sand-deep)]",
                 step: "Step 2",
                 title: "We do the hard thinking",
                 body: "Breed nutrition, calorie calculations, health condition rules, FEDIAF standards — all handled. You don't need a veterinary nutritionist.",
               },
               {
-                placeholder: "Bowl of fresh food, textured and warm",
-                bg: "bg-[var(--color-forest-light)]/20",
+                bg: "bg-[var(--color-forest-muted)]",
                 step: "Step 3",
                 title: "You cook it. They love it.",
                 body: "One-pot recipes, exact gram amounts, batch cooking built in. One cook session feeds them for days.",
               },
-            ].map(({ placeholder, bg, step, title, body }) => (
+            ].map(({ bg, step, title, body }) => (
               <article key={step} className="flex flex-col gap-4">
-                <div className={`aspect-square w-full rounded-2xl ${bg} flex flex-col items-center justify-center gap-1 text-[var(--color-ink-300)]`}>
-                  <span className="text-2xl">📷</span>
-                  <span className="text-xs">{placeholder}</span>
+                <div className={`aspect-square w-full rounded-2xl ${bg} flex items-center justify-center`}>
+                  <span className="font-heading text-8xl leading-none text-[var(--color-ink-100)]">{step.slice(-1)}</span>
                 </div>
                 <p className="eyebrow">{step}</p>
                 <h3 className="font-heading text-2xl text-[var(--color-ink)]">{title}</h3>
@@ -254,7 +271,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── SECTION 6: WAITLIST ── */}
+      {/* ── SECTION 6: FOUNDING CTA ── */}
       <section className="bg-[var(--color-sand)] py-12 md:py-20">
         <div className="mx-auto max-w-2xl px-6 md:px-10">
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8 text-center md:p-12">
@@ -264,10 +281,15 @@ export default async function Home() {
               We&apos;re opening to the first 500 members at a founding price locked in for life. Early access, direct input on what we build next, and the best price we&apos;ll ever offer.
             </p>
             <div className="mt-6">
-              <WaitlistForm />
+              <Link
+                href="/signup?plan=founding"
+                className="inline-block rounded-full bg-[var(--color-coral)] px-8 py-4 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+              >
+                Claim your founding spot →
+              </Link>
             </div>
             <p className="mt-3 text-xs text-[var(--color-ink-300)]">
-              No spam. Just launch updates and your founder status.
+              14-day free trial · No card required.
             </p>
           </div>
         </div>

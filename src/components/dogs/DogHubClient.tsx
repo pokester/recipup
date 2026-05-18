@@ -67,13 +67,11 @@ type Props = {
   latestLogResponse: HealthLog | null;
 };
 
-type TabId = "overview" | "health" | "recipes" | "plans";
+type TabId = "cook" | "track";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "overview", label: "Overview" },
-  { id: "health", label: "Health" },
-  { id: "recipes", label: "Recipes" },
-  { id: "plans", label: "Plans" },
+  { id: "cook", label: "Cook" },
+  { id: "track", label: "Track" },
 ];
 
 const RANGE_OPTIONS: { label: string; weeks: number | null }[] = [
@@ -108,6 +106,21 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function energyLabel(v: number) {
+  if (v === 1) return "Low";
+  if (v === 2) return "Normal";
+  if (v === 3) return "High";
+  return "—";
+}
+
+function appetiteLabel(v: number) {
+  if (v === 1) return "Not eating";
+  if (v === 2) return "Reduced";
+  if (v === 3) return "Normal";
+  if (v === 4) return "Enthusiastic";
+  return "—";
+}
+
 function capitalize(s: string | null) {
   if (!s) return "";
   return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
@@ -128,9 +141,10 @@ export function DogHubClient({
   latestLogResponse,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>(() => {
-    if (typeof window === "undefined") return "overview";
-    const hash = window.location.hash.replace("#", "") as TabId;
-    return TABS.some((t) => t.id === hash) ? hash : "overview";
+    if (typeof window === "undefined") return "cook";
+    const hash = window.location.hash.replace("#", "");
+    if (hash === "track" || hash === "health") return "track";
+    return "cook";
   });
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [rangeWeeks, setRangeWeeks] = useState<number | null>(12);
@@ -176,10 +190,9 @@ export function DogHubClient({
         <div
           className={`mb-6 rounded-2xl border px-6 py-5 ${
             latestLogResponse.vet_flag
-              ? "border-amber-300 border-l-4 border-l-amber-500 bg-amber-50"
-              : "border-[var(--color-sand-deep)] border-l-4 bg-[var(--color-sand)]"
+              ? "border-amber-300 bg-amber-50"
+              : "border-[var(--color-sand-deep)] bg-[var(--color-sand)]"
           }`}
-          style={latestLogResponse.vet_flag ? undefined : { borderLeftColor: "var(--color-coral)" }}
         >
           <p className="font-semibold text-[var(--color-ink)]">
             {latestLogResponse.vet_flag ? "⚠️ " : ""}
@@ -212,115 +225,126 @@ export function DogHubClient({
         ))}
       </div>
 
-      {/* ── OVERVIEW TAB ── */}
-      {activeTab === "overview" && (
-        <div className="space-y-6">
-          {/* Health snapshot */}
-          <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="font-heading text-xl text-[var(--color-ink)]">Latest health snapshot</h2>
+      {/* ── COOK TAB ── */}
+      {activeTab === "cook" && (
+        <div className="space-y-10">
+          {/* Recipes */}
+          <div>
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h2 className="font-heading text-xl text-[var(--color-ink)]">Saved recipes</h2>
               <Link
-                href={`/dogs/${dog.id}/log`}
+                href={`/onboard?dog_id=${dog.id}`}
                 className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
               >
-                Log this week →
+                New batch →
               </Link>
             </div>
-            {latestLog ? (
-              <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-500)]">Weight</p>
-                  <p className="mt-1 font-semibold text-[var(--color-ink)]">
-                    {latestLog.weight_kg != null ? `${latestLog.weight_kg}kg` : "—"}
-                    {weightChange !== null && (
-                      <span
-                        className={`ml-1 text-xs ${
-                          weightChange > 0 ? "text-amber-600" : weightChange < 0 ? "text-blue-600" : "text-[var(--color-ink-500)]"
-                        }`}
-                      >
-                        {weightChange > 0 ? `↑${weightChange.toFixed(1)}` : weightChange < 0 ? `↓${Math.abs(weightChange).toFixed(1)}` : "→"}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-500)]">Energy</p>
-                  <p className="mt-1 font-semibold text-[var(--color-ink)]">
-                    {latestLog.energy_level === "low" ? "😴 Low" : latestLog.energy_level === "high" ? "⚡ High" : latestLog.energy_level === "normal" ? "😊 Normal" : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-500)]">Coat</p>
-                  <p className="mt-1 font-semibold text-[var(--color-ink)]">
-                    {latestLog.coat_score != null ? `${latestLog.coat_score}/5` : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-500)]">Appetite</p>
-                  <p className="mt-1 font-semibold capitalize text-[var(--color-ink)]">
-                    {latestLog.appetite ?? "—"}
-                  </p>
-                </div>
-                <p className="col-span-2 text-xs text-[var(--color-ink-300)] md:col-span-4">
-                  Last logged {daysAgo(latestLog.week_start)}
-                </p>
+
+            {savedRecipes.length > 0 ? (
+              <div className="space-y-3">
+                {savedRecipes.map((item) => {
+                  const methodLabel =
+                    item.recipe_data.method === "slow_cooker"
+                      ? "Slow Cooker"
+                      : item.recipe_data.method === "one_pot"
+                        ? "One Pot"
+                        : item.recipe_data.method === "oven"
+                          ? "Oven"
+                          : null;
+                  return (
+                    <div key={item.id} className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-5 py-4">
+                      <p className="font-heading text-lg text-[var(--color-ink)]">{item.recipe_data.name ?? "Untitled"}</p>
+                      {item.recipe_data.tagline && (
+                        <p className="mt-0.5 text-sm italic text-[var(--color-ink-500)]">{item.recipe_data.tagline}</p>
+                      )}
+                      <div className="mt-2 flex gap-2">
+                        {methodLabel && (
+                          <span className="rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-3 py-0.5 text-xs text-[var(--color-ink)]">
+                            {methodLabel}
+                          </span>
+                        )}
+                        <span className="text-xs text-[var(--color-ink-300)]">Saved {daysAgo(item.saved_at)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <div className="mt-4">
-                <p className="text-[var(--color-ink-500)]">
-                  No health logs yet. Start tracking {displayName}&apos;s health to see trends build over time.
-                </p>
+              <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
+                <p className="font-heading text-xl text-[var(--color-ink)]">No saved recipes yet for {displayName}.</p>
+                <p className="mt-2 text-[var(--color-ink-500)]">We&apos;ll tailor them to {displayName}&apos;s profile.</p>
+                <Link
+                  href={`/onboard?dog_id=${dog.id}`}
+                  className="mt-6 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+                >
+                  Get {displayName}&apos;s recipes →
+                </Link>
               </div>
             )}
           </div>
 
-          {/* Active plan */}
-          {activePlan && (
-            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
-              <h2 className="font-heading text-xl text-[var(--color-ink)]">Current meal plan</h2>
-              <p className="mt-1 text-sm text-[var(--color-ink-500)]">
-                {formatDate(activePlan.start_date)} – {formatDate(activePlan.end_date)}
-              </p>
+          {/* Plans */}
+          <div>
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h2 className="font-heading text-xl text-[var(--color-ink)]">Meal plans</h2>
               <Link
-                href={`/planner/${activePlan.id}`}
-                className="mt-4 inline-block rounded-full border border-[var(--color-sand-deep)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)]"
+                href={`/planner/new?dog_id=${dog.id}`}
+                className="rounded-full border border-[var(--color-sand-deep)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-sand)]"
               >
-                View plan →
+                New plan →
               </Link>
             </div>
-          )}
 
-          {/* Latest recipe */}
-          {savedRecipes[0] && (
-            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
-              <h2 className="font-heading text-xl text-[var(--color-ink)]">Latest saved recipe</h2>
-              <p className="mt-1 font-semibold text-[var(--color-ink)]">
-                {savedRecipes[0].recipe_data.name ?? "Untitled"}
-              </p>
-              <p className="text-xs text-[var(--color-ink-500)]">Saved {daysAgo(savedRecipes[0].saved_at)}</p>
-              <Link
-                href="/library"
-                className="mt-4 inline-block text-sm font-semibold text-[var(--color-coral)] hover:underline"
-              >
-                View saved recipes →
-              </Link>
-            </div>
-          )}
+            {allPlans.length > 0 ? (
+              <div className="space-y-3">
+                {allPlans.map((plan) => {
+                  const isActive = plan.status === "active";
+                  return (
+                    <div
+                      key={plan.id}
+                      className={`rounded-2xl border px-5 py-4 ${isActive ? "border-[var(--color-coral)] bg-[var(--color-warm-white)]" : "border-[var(--color-sand-deep)] bg-[var(--color-warm-white)]"}`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            {isActive && <span className="h-2 w-2 rounded-full bg-green-500" />}
+                            <p className="font-semibold text-[var(--color-ink)]">
+                              {formatDate(plan.start_date)} – {formatDate(plan.end_date)}
+                            </p>
+                          </div>
+                          <p className="mt-1 text-sm capitalize text-[var(--color-ink-500)]">
+                            {plan.cooking_frequency.replace(/_/g, " ")} · {capitalize(plan.status)}
+                          </p>
+                        </div>
+                        <Link
+                          href={`/planner/${plan.id}`}
+                          className="shrink-0 rounded-full border border-[var(--color-sand-deep)] px-4 py-1.5 text-sm font-semibold text-[var(--color-ink)]"
+                        >
+                          View plan →
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
+                <p className="font-heading text-xl text-[var(--color-ink)]">No meal plans yet for {displayName}.</p>
+                <Link
+                  href={`/planner/new?dog_id=${dog.id}`}
+                  className="mt-6 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+                >
+                  Create a plan →
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* ── HEALTH TAB ── */}
-      {activeTab === "health" && (
+      {/* ── TRACK TAB ── */}
+      {activeTab === "track" && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <Link
-              href={`/dogs/${dog.id}/log`}
-              className="rounded-full bg-[var(--color-coral)] px-5 py-2.5 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
-            >
-              Log this week →
-            </Link>
-          </div>
-
           {!hasHealthAccess ? (
             <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
               <p className="font-heading text-2xl text-[var(--color-ink)]">Health tracking is a Pack Pro feature</p>
@@ -343,22 +367,30 @@ export function DogHubClient({
             </div>
           ) : (
             <>
-              {/* Range selector */}
-              <div className="flex gap-1 rounded-full bg-[var(--color-sand)] p-0.5 self-start">
-                {RANGE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.label}
-                    type="button"
-                    onClick={() => setRangeWeeks(opt.weeks)}
-                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                      rangeWeeks === opt.weeks
-                        ? "bg-[var(--color-warm-white)] shadow-sm text-[var(--color-ink)]"
-                        : "text-[var(--color-ink-500)]"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              {/* Range selector + CTA */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex gap-1 rounded-full bg-[var(--color-sand)] p-0.5">
+                  {RANGE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => setRangeWeeks(opt.weeks)}
+                      className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                        rangeWeeks === opt.weeks
+                          ? "bg-[var(--color-warm-white)] shadow-sm text-[var(--color-ink)]"
+                          : "text-[var(--color-ink-500)]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <Link
+                  href={`/dogs/${dog.id}/log`}
+                  className="rounded-full bg-[var(--color-coral)] px-5 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+                >
+                  Log this week →
+                </Link>
               </div>
 
               {/* Weight chart */}
@@ -416,27 +448,36 @@ export function DogHubClient({
                       tick={{ fontSize: 10, fill: "var(--color-ink-300)" }}
                       tickFormatter={(v: string) => new Date(v).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                     />
-                    <YAxis tick={{ fontSize: 10, fill: "var(--color-ink-300)" }} domain={[0, 4]} width={24} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid var(--color-sand-deep)" }} />
-                    <Bar dataKey="energy" fill="#C97D4E" radius={[4, 4, 0, 0]} maxBarSize={20} />
-                    <Bar dataKey="appetite" fill="#E9D7C5" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                    <YAxis hide domain={[0, 4]} />
+                    <Tooltip
+                      contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid var(--color-sand-deep)" }}
+                      formatter={(value: unknown, name: unknown) => [
+                        name === "energy" ? energyLabel(value as number) : appetiteLabel(value as number),
+                        name === "energy" ? "Energy" : "Appetite",
+                      ]}
+                      labelFormatter={(v: unknown) => new Date(String(v)).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                    />
+                    <Bar dataKey="energy" fill="var(--color-coral)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                    <Bar dataKey="appetite" fill="var(--color-sand-deep)" radius={[4, 4, 0, 0]} maxBarSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* Stats row */}
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {[
-                  { label: "Current weight", value: latestLog?.weight_kg != null ? `${latestLog.weight_kg}kg` : "—" },
-                  { label: "Avg coat score", value: avgCoat ? `${avgCoat.toFixed(1)}/5` : "—" },
-                  { label: "Weeks tracked", value: String(healthLogs.length) },
-                  { label: "Adjustments made", value: String(totalAdjustments) },
-                ].map((stat) => (
-                  <div key={stat.label} className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-4">
-                    <p className="text-xs text-[var(--color-ink-500)]">{stat.label}</p>
-                    <p className="mt-1 font-heading text-2xl text-[var(--color-ink)]">{stat.value}</p>
-                  </div>
-                ))}
+              {/* Stats summary */}
+              <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-6 py-4 shadow-[var(--shadow-card)]">
+                <p className="text-sm text-[var(--color-ink-500)]">
+                  Tracking{" "}
+                  <span className="font-semibold text-[var(--color-ink)]">{healthLogs.length} week{healthLogs.length !== 1 ? "s" : ""}</span>
+                  {latestLog?.weight_kg != null && (
+                    <> · currently <span className="font-semibold text-[var(--color-ink)]">{latestLog.weight_kg}kg</span></>
+                  )}
+                  {avgCoat ? (
+                    <> · avg coat <span className="font-semibold text-[var(--color-ink)]">{avgCoat.toFixed(1)}/5</span></>
+                  ) : null}
+                  {totalAdjustments > 0 && (
+                    <> · <span className="font-semibold text-[var(--color-ink)]">{totalAdjustments}</span> recipe adjustment{totalAdjustments !== 1 ? "s" : ""} made</>
+                  )}
+                </p>
               </div>
 
               {/* Log history */}
@@ -494,114 +535,6 @@ export function DogHubClient({
         </div>
       )}
 
-      {/* ── RECIPES TAB ── */}
-      {activeTab === "recipes" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="font-heading text-xl text-[var(--color-ink)]">Saved recipes for {displayName}</h2>
-            <Link
-              href={`/onboard?dog_id=${dog.id}`}
-              className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
-            >
-              Generate new recipes →
-            </Link>
-          </div>
-
-          {savedRecipes.length > 0 ? (
-            <div className="space-y-3">
-              {savedRecipes.map((item) => {
-                const methodLabel =
-                  item.recipe_data.method === "slow_cooker"
-                    ? "Slow Cooker"
-                    : item.recipe_data.method === "one_pot"
-                      ? "One Pot"
-                      : item.recipe_data.method === "oven"
-                        ? "Oven"
-                        : null;
-                return (
-                  <div key={item.id} className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-5 py-4">
-                    <p className="font-heading text-lg text-[var(--color-ink)]">{item.recipe_data.name ?? "Untitled"}</p>
-                    {item.recipe_data.tagline && <p className="mt-0.5 text-sm italic text-[var(--color-ink-500)]">{item.recipe_data.tagline}</p>}
-                    <div className="mt-2 flex gap-2">
-                      {methodLabel && (
-                        <span className="rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-3 py-0.5 text-xs text-[var(--color-ink)]">{methodLabel}</span>
-                      )}
-                      <span className="text-xs text-[var(--color-ink-300)]">Saved {daysAgo(item.saved_at)}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
-              <p className="font-heading text-xl text-[var(--color-ink)]">No saved recipes yet for {displayName}.</p>
-              <p className="mt-2 text-[var(--color-ink-500)]">Generate a recipe plan to get started.</p>
-              <Link
-                href={`/onboard?dog_id=${dog.id}`}
-                className="mt-6 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
-              >
-                Generate recipes →
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── PLANS TAB ── */}
-      {activeTab === "plans" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="font-heading text-xl text-[var(--color-ink)]">Meal plans for {displayName}</h2>
-            <Link
-              href={`/planner/new?dog_id=${dog.id}`}
-              className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
-            >
-              Create new plan →
-            </Link>
-          </div>
-
-          {allPlans.length > 0 ? (
-            <div className="space-y-3">
-              {allPlans.map((plan) => {
-                const isActive = plan.status === "active";
-                return (
-                  <div key={plan.id} className={`rounded-2xl border px-5 py-4 ${isActive ? "border-[var(--color-coral)] bg-[var(--color-warm-white)]" : "border-[var(--color-sand-deep)] bg-[var(--color-warm-white)]"}`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          {isActive && <span className="h-2 w-2 rounded-full bg-green-500" />}
-                          <p className="font-semibold text-[var(--color-ink)]">
-                            {formatDate(plan.start_date)} – {formatDate(plan.end_date)}
-                          </p>
-                        </div>
-                        <p className="mt-1 text-sm capitalize text-[var(--color-ink-500)]">
-                          {plan.cooking_frequency.replace(/_/g, " ")} · {capitalize(plan.status)}
-                        </p>
-                      </div>
-                      <Link
-                        href={`/planner/${plan.id}`}
-                        className="shrink-0 rounded-full border border-[var(--color-sand-deep)] px-4 py-1.5 text-sm font-semibold text-[var(--color-ink)]"
-                      >
-                        View plan →
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-10 text-center">
-              <p className="font-heading text-xl text-[var(--color-ink)]">No meal plans yet for {displayName}.</p>
-              <Link
-                href={`/planner/new?dog_id=${dog.id}`}
-                className="mt-6 inline-block rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
-              >
-                Create a plan →
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

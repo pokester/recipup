@@ -24,7 +24,7 @@ export default function Error({
         </h2>
         <p className="mb-8 text-base text-[var(--color-ink-soft)]">
           An unexpected error occurred. Try refreshing the page — if it keeps
-          happening, contact us at hello@recipup.com
+          happening, contact us at hello@recipup.co
         </p>
         <div className="flex justify-center gap-4">
           <button

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
@@ -59,6 +59,11 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isFounding, setIsFounding] = useState(false);
+
+  useEffect(() => {
+    setIsFounding(new URLSearchParams(window.location.search).get("plan") === "founding");
+  }, []);
 
   const strength = passwordStrength(password);
 
@@ -128,7 +133,7 @@ export default function SignupPage() {
         return;
       }
     } catch { /* ignore */ }
-    router.push("/onboard");
+    router.push(isFounding ? "/welcome?type=founding" : "/onboard");
   };
 
   return (
@@ -146,17 +151,24 @@ export default function SignupPage() {
         <div className="space-y-6">
           <div>
             <p className="font-heading text-2xl text-[var(--color-warm-white)]">
-              14 days free. Then from £1.09/month.
+              {isFounding ? "Lock in the founding price forever." : "14 days free. Then from £1.09/month."}
             </p>
             <p className="mt-2 text-sm text-[var(--color-warm-white)]/60">No card required. Cancel any time.</p>
           </div>
 
           <ul className="space-y-4">
-            {[
-              "Personalised recipes for your exact dog",
-              "No spreadsheets, no guesswork",
-              "Cancel any time — no pressure",
-            ].map((item) => (
+            {(isFounding
+              ? [
+                  "£1.50/month — locked in for life",
+                  "Full Pack Pro access included",
+                  "Early access to every new feature",
+                ]
+              : [
+                  "Personalised recipes for your exact dog",
+                  "No spreadsheets, no guesswork",
+                  "Cancel any time — no pressure",
+                ]
+            ).map((item) => (
               <li key={item} className="flex items-start gap-3 text-sm text-[var(--color-warm-white)]/80">
                 <span className="mt-0.5 shrink-0 text-[var(--color-coral)]">✓</span>
                 {item}
@@ -165,17 +177,30 @@ export default function SignupPage() {
           </ul>
 
           <div className="rounded-xl bg-[var(--color-forest-light)] p-6">
-            <p className="text-sm font-semibold text-[var(--color-warm-white)]">
-              14-day free trial — full Pack Pro access from day one.
-            </p>
-            <p className="mt-1 text-xs text-[var(--color-warm-white)]/70">
-              No card required. Upgrade, downgrade, or cancel whenever you like.
-            </p>
+            {isFounding ? (
+              <>
+                <p className="text-sm font-semibold text-[var(--color-warm-white)]">
+                  You&apos;re claiming a founding spot.
+                </p>
+                <p className="mt-1 text-xs text-[var(--color-warm-white)]/70">
+                  14-day free trial, then £1.50/month — the best price we&apos;ll ever offer, locked in forever.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-[var(--color-warm-white)]">
+                  14-day free trial — full Pack Pro access from day one.
+                </p>
+                <p className="mt-1 text-xs text-[var(--color-warm-white)]/70">
+                  No card required. Upgrade, downgrade, or cancel whenever you like.
+                </p>
+              </>
+            )}
           </div>
         </div>
 
         <p className="text-xs text-[var(--color-warm-white)]/40">
-          Joining the first 500? You&apos;ll lock in the founding rate forever.
+          {isFounding ? "Founding member pricing. Locked in the moment your account is created." : "Joining the first 500? You'll lock in the founding rate forever."}
         </p>
       </div>
 
@@ -192,8 +217,10 @@ export default function SignupPage() {
             <p className="mt-2 text-[var(--color-ink-soft)]">Start cooking real food for your dog</p>
           </div>
 
-          <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Your 14-day free trial starts the moment you sign up. Full access — no card required.
+          <div className="mb-5 rounded-2xl border border-[var(--color-butter-light)] bg-[var(--color-butter-muted)] px-4 py-3 text-sm text-[var(--color-ink)]">
+            {isFounding
+              ? "You're securing founding member pricing: £1.50/month, locked in forever. 14-day free trial included."
+              : "Your 14-day free trial starts the moment you sign up. Full access — no card required."}
           </div>
 
           <div className="space-y-3">

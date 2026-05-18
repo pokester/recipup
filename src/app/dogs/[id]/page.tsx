@@ -106,6 +106,7 @@ export default async function DogHubPage({ params }: { params: Promise<{ id: str
   const latestLog = healthLogs[0] ?? null;
   const isRecentLog = latestLog && isWithinLastDays(latestLog.week_start, 7);
   const latestLogResponse = isRecentLog ? latestLog : null;
+  const checkInDue = hasHealthAccess && (!latestLog || !isWithinLastDays(latestLog.week_start, 7));
 
   const displayName = toTitleCase(dog.name);
   const subtitle = [capitalize(dog.breed), ageLabel(dog.age_years), dog.weight_kg != null ? `${dog.weight_kg}kg` : null, capitalize(dog.sex)]
@@ -137,6 +138,18 @@ export default async function DogHubPage({ params }: { params: Promise<{ id: str
               {subtitle && (
                 <p className="mt-1 text-sm text-[var(--color-ink-500)]">{subtitle}</p>
               )}
+              {(activePlan || checkInDue) && (
+                <p className="mt-1.5 text-sm text-[var(--color-ink-500)]">
+                  {[
+                    activePlan
+                      ? `Active plan to ${new Date(activePlan.end_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
+                      : null,
+                    checkInDue ? "Check-in due" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
               <div className="mt-2 flex flex-wrap gap-2">
                 {dog.goal && (
                   <span className="rounded-full border border-[var(--color-sand-deep)] px-3 py-1 text-xs text-[var(--color-ink-500)]">
@@ -153,16 +166,10 @@ export default async function DogHubPage({ params }: { params: Promise<{ id: str
           </div>
           <div className="flex gap-2">
             <Link
-              href={`/onboard?dog_id=${dog.id}`}
-              className="rounded-full border border-[var(--color-sand-deep)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)]"
+              href={`/onboard?dog_id=${dog.id}&mode=edit`}
+              className="rounded-full border border-[var(--color-sand-deep)] px-4 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-sand)]"
             >
               Edit profile
-            </Link>
-            <Link
-              href={`/onboard?dog_id=${dog.id}`}
-              className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
-            >
-              Generate recipes →
             </Link>
           </div>
         </div>

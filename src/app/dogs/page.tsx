@@ -154,18 +154,12 @@ export default async function DogsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex shrink-0 flex-col gap-2">
+                <div className="shrink-0">
                   <Link
                     href={`/dogs/${dog.id}`}
                     className="rounded-full border border-[var(--color-ink-300)] px-4 py-2 text-center text-sm font-semibold text-[var(--color-ink)]"
                   >
                     View profile →
-                  </Link>
-                  <Link
-                    href={`/onboard?dog_id=${dog.id}`}
-                    className="rounded-full bg-[var(--color-coral)] px-4 py-2 text-center text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
-                  >
-                    Generate recipes →
                   </Link>
                 </div>
               </div>

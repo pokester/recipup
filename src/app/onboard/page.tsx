@@ -52,6 +52,55 @@ const GOALS = [
   { id: "puppy", emoji: "★", title: "Puppy growth", description: "Balanced nutrition as they grow" },
 ];
 
+const DB_GOAL_TO_FORM: Record<string, string> = {
+  maintain_weight: "maintain", lose_weight: "lose", gain_weight: "gain",
+  build_muscle: "build", senior_support: "senior", puppy_growth: "puppy",
+};
+
+const DB_CONDITION_TO_LABEL: Record<string, string> = {
+  kidney_disease: "Kidney Disease", diabetes: "Diabetes", allergies: "Allergies",
+  overweight: "Overweight", heart_disease: "Heart Disease", joint_issues: "Joint Issues",
+  sensitive_stomach: "Sensitive Stomach", cancer: "Cancer",
+};
+
+type DogRecord = {
+  name: string | null;
+  breed: string | null;
+  age_years: number | null;
+  weight_kg: number | null;
+  sex: string | null;
+  goal: string | null;
+  diet_type: string | null;
+  health_conditions: string[] | null;
+  allergens: string[] | null;
+  other_exclusions: string | null;
+  activity_level: string | null;
+  current_food_spend_monthly: number | null;
+};
+
+function buildPayloadFromRecord(dr: DogRecord): Record<string, unknown> {
+  return {
+    dog_name: (dr.name ?? "").toLowerCase(),
+    dog: {
+      ...(dr.breed ? { breed: dr.breed } : {}),
+      ...(dr.age_years != null ? { age_years: dr.age_years } : {}),
+      ...(dr.weight_kg != null ? { weight_kg: dr.weight_kg } : {}),
+      ...(dr.sex ? { sex: dr.sex } : {}),
+      ...(dr.activity_level ? { activity_level: dr.activity_level } : {}),
+      ...(dr.current_food_spend_monthly != null ? { current_food_spend_monthly: dr.current_food_spend_monthly } : {}),
+    },
+    diet: {
+      ...(dr.diet_type ? { type: dr.diet_type } : {}),
+      ...(dr.goal ? { goal: dr.goal } : {}),
+      ...(dr.allergens?.length ? { allergens: dr.allergens } : {}),
+      ...(dr.other_exclusions ? { other_exclusions: dr.other_exclusions } : {}),
+    },
+    health: {
+      conditions: dr.health_conditions ?? [],
+    },
+  };
+}
+
 const KIDNEY_STAGES = [
   { id: "stage_1", label: "Stage 1" }, { id: "stage_2", label: "Stage 2" },
   { id: "stage_3", label: "Stage 3" }, { id: "stage_4", label: "Stage 4" },
@@ -170,6 +219,7 @@ function OnboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dogId = searchParams.get("dog_id");
+  const isEditMode = searchParams.get("mode") === "edit";
 
   // Auth / login state (resolved after mount)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -182,6 +232,8 @@ function OnboardPage() {
   const [agentPayload, setAgentPayload] = useState<Record<string, unknown> | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<Record<string, unknown> | null>(null);
+  const [isRegenMode, setIsRegenMode] = useState(false);
+  const [isKitchenOnlyMode, setIsKitchenOnlyMode] = useState(false);
 
   // Dog profile form
   const [form, setForm] = useState<FormState>({
@@ -211,7 +263,7 @@ function OnboardPage() {
     ingredients: true, supplements: false, equipment: false,
   });
 
-  const totalSteps = isLoggedIn ? 6 : 5;
+  const totalSteps = isEditMode ? 5 : (isLoggedIn ? 6 : 5);
   const noneSelected = form.healthConditions.includes("None / Healthy");
 
   // ─── Auth check + pantry pre-fill ──────────────────────────────────────────
@@ -232,6 +284,51 @@ function OnboardPage() {
         if (user) {
           setIsLoggedIn(true);
           setUserId(user.id);
+
+          // When dog_id is present, load the saved profile and skip the wizard
+          if (dogId) {
+            try {
+              const { data: dr } = await supabase
+                .from("dogs")
+                .select("name, breed, age_years, weight_kg, sex, goal, diet_type, health_conditions, allergens, other_exclusions, activity_level, current_food_spend_monthly")
+                .eq("id", dogId)
+                .eq("user_id", user.id)
+                .single();
+              if (dr && !cancelled) {
+                const rec = dr as DogRecord;
+                setForm((prev) => ({
+                  ...prev,
+                  dogName: rec.name ? rec.name.charAt(0).toUpperCase() + rec.name.slice(1) : "",
+                  breed: rec.breed
+                    ? rec.breed.replace(/\b\w/g, (c: string) => c.toUpperCase())
+                    : "",
+                  age: rec.age_years != null ? String(rec.age_years) : "",
+                  weight: rec.weight_kg != null ? String(rec.weight_kg) : "",
+                  weightUnit: "kg" as const,
+                  sex: (rec.sex ?? "") as FormState["sex"],
+                  activityLevel: rec.activity_level ?? "",
+                  dietType: rec.diet_type === "raw" ? ("Raw (BARF)" as const) : ("Cooked" as const),
+                  goal: DB_GOAL_TO_FORM[rec.goal ?? ""] ?? "",
+                  healthConditions: ((rec.health_conditions ?? []) as string[])
+                    .map((c) => DB_CONDITION_TO_LABEL[c])
+                    .filter(Boolean),
+                  allergens: ((rec.allergens ?? []) as string[]).map(
+                    (a) => a.charAt(0).toUpperCase() + a.slice(1),
+                  ),
+                  otherAvoid: rec.other_exclusions ?? "",
+                  foodSpendMonthly:
+                    rec.current_food_spend_monthly != null
+                      ? String(rec.current_food_spend_monthly)
+                      : "",
+                }));
+                setAgentPayload(buildPayloadFromRecord(rec));
+                if (!isEditMode) setIsRegenMode(true);
+              }
+            } catch {
+              // Dog fetch failed — fall through to normal wizard
+            }
+          }
+
           // Pre-fill pantry from DB
           void supabase
             .from("pantry_items")
@@ -372,7 +469,7 @@ function OnboardPage() {
   };
 
   const goBack = () => {
-    if (step === 1) { router.push("/"); return; }
+    if (step === 1) { router.push(dogId ? `/dogs/${dogId}` : "/"); return; }
     setStep((s) => s - 1);
   };
 
@@ -576,11 +673,86 @@ function OnboardPage() {
     proceedWithGeneration(payload);
   };
 
+  // Saves profile only (edit mode) — no recipe generation
+  const saveProfileOnly = async () => {
+    const payload = agentPayload ?? buildAgentPayload(form);
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && userId && dogId) {
+      const supabase = createClient();
+      try { await saveDogToSupabase(supabase, userId, payload); } catch { /* non-fatal */ }
+    }
+    router.push(`/dogs/${dogId}`);
+  };
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   if (!authChecked) {
     // Tiny loading state while we resolve auth (prevents flash of wrong step count)
     return <div className="flex min-h-screen items-center justify-center" />;
+  }
+
+  // Regen mode: dog_id was present and profile loaded — skip the full wizard
+  if (isRegenMode) {
+    const displayName = form.dogName || "your dog";
+    const profileLine = [
+      form.breed,
+      form.age ? `${form.age}y` : null,
+      form.weight ? `${form.weight}kg` : null,
+      form.activityLevel ? `${form.activityLevel} activity` : null,
+      form.goal ? (GOALS.find((g) => g.id === form.goal)?.title ?? null) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const healthLine =
+      form.healthConditions.length > 0 && !form.healthConditions.includes("None / Healthy")
+        ? form.healthConditions.join(", ")
+        : null;
+
+    return (
+      <div className="mx-auto w-full max-w-4xl px-6 py-10 md:px-10 md:py-14">
+        <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-sand)] p-8 md:p-10">
+          <p className="text-[0.65rem] font-semibold text-[var(--color-sage)] uppercase tracking-widest mb-5">
+            Ready to cook
+          </p>
+          <h1 className="font-heading text-3xl text-[var(--color-ink)]">
+            Fresh batch for {displayName}
+          </h1>
+          {profileLine && (
+            <p className="mt-2 text-sm text-[var(--color-ink-500)]">{profileLine}</p>
+          )}
+          {healthLine && (
+            <p className="mt-1 text-sm text-[var(--color-ink-500)]">{healthLine}</p>
+          )}
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={generateWithPantry}
+              disabled={isGenerating}
+              className={`rounded-full bg-[var(--color-coral)] px-7 py-3 text-sm font-semibold text-[var(--color-warm-white)] ${
+                isGenerating ? "animate-pulse" : "transition-transform hover:-translate-y-0.5"
+              }`}
+            >
+              {isGenerating ? `Building ${displayName}'s recipes...` : "Generate now →"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsRegenMode(false); setIsKitchenOnlyMode(true); setStep(6); }}
+              className="rounded-full border border-[var(--color-sand-deep)] px-7 py-3 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-sand-deep)] transition-colors"
+            >
+              Update what&apos;s in the kitchen →
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => { setIsRegenMode(false); setStep(1); }}
+            className="mt-6 block text-sm text-[var(--color-ink-500)] hover:text-[var(--color-coral)] transition-colors"
+          >
+            Edit {displayName}&apos;s profile
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const generateButtonLabel = isGenerating
@@ -593,122 +765,136 @@ function OnboardPage() {
     <div className="mx-auto w-full max-w-4xl px-6 py-10 md:px-10 md:py-14">
       {/* Save modal (logged-out users) */}
       {showSaveModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream)] p-8 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 px-4">
+          <div className="w-full max-w-md rounded-3xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-8 shadow-xl">
             <h2 className="font-heading text-2xl text-[var(--color-ink)]">Save your recipes?</h2>
-            <p className="mt-3 text-[var(--color-ink-soft)]">
+            <p className="mt-3 text-[var(--color-ink-500)]">
               Create a free account to generate recipes, keep your dog&apos;s profile, and access everything again later.
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={() => router.push("/signup")}
-                className="rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-cream)] transition-transform hover:-translate-y-0.5"
+                className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
               >
                 Create free account
               </button>
               {pendingPayload && (
-                <p className="text-center text-xs text-[var(--color-ink-soft)]">
+                <p className="text-center text-xs text-[var(--color-ink-500)]">
                   We&apos;ll keep this dog profile on this device while you create the account.
                 </p>
               )}
+              <button
+                type="button"
+                onClick={() => setShowSaveModal(false)}
+                className="text-center text-sm text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
+              >
+                Not now — I&apos;ll sign up later
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* Progress bar */}
-      <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-          Step {step} of {totalSteps}
-        </p>
-        <div className={`mt-3 grid gap-2`} style={{ gridTemplateColumns: `repeat(${totalSteps}, 1fr)` }}>
-          {Array.from({ length: totalSteps }).map((_, index) => (
-            <div
-              key={index}
-              className={`h-2 rounded-full border ${
-                index < step
-                  ? "border-[var(--color-accent)] bg-[var(--color-accent)]"
-                  : "border-[var(--color-border-strong)] bg-[var(--color-cream-soft)]"
-              }`}
-            />
-          ))}
+      {isKitchenOnlyMode ? (
+        <div className="mb-8">
+          <p className="text-sm text-[var(--color-ink-500)]">Updating your kitchen</p>
+          <div className="mt-3 h-2 w-full rounded-full border border-[var(--color-coral)] bg-[var(--color-coral)]" />
         </div>
-      </div>
+      ) : (
+        <div className="mb-8">
+          <p className="text-sm text-[var(--color-ink-500)]">
+            Step {step} of {totalSteps}
+          </p>
+          <div className={`mt-3 grid gap-2`} style={{ gridTemplateColumns: `repeat(${totalSteps}, 1fr)` }}>
+            {Array.from({ length: totalSteps }).map((_, index) => (
+              <div
+                key={index}
+                className={`h-2 rounded-full border ${
+                  index < step
+                    ? "border-[var(--color-coral)] bg-[var(--color-coral)]"
+                    : "border-[var(--color-sand-deep)] bg-[var(--color-sand)]"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Step content */}
-      <section className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] p-6 md:p-8">
+      <section className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-sand)] p-6 md:p-8">
 
         {/* ── Step 1: Meet your dog ── */}
         {step === 1 && (
           <div className="space-y-6">
             <div>
               <h1 className="font-heading text-4xl text-[var(--color-ink)]">Meet your dog</h1>
-              <p className="mt-1 text-[var(--color-ink-soft)]">Tell us who they are — we&apos;ll handle the rest.</p>
+              <p className="mt-1 text-[var(--color-ink-500)]">Tell us who they are — we&apos;ll handle the rest.</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2 md:col-span-2">
-                <span className="text-sm text-[var(--color-ink-soft)]">Dog&apos;s name</span>
+                <span className="text-sm text-[var(--color-ink-500)]">Dog&apos;s name</span>
                 <input
                   value={form.dogName}
                   onChange={(e) => updateForm("dogName", e.target.value)}
-                  className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]"
+                  className="h-11 w-full rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]"
                 />
               </label>
               <label className="space-y-2">
-                <span className="text-sm text-[var(--color-ink-soft)]">Breed</span>
+                <span className="text-sm text-[var(--color-ink-500)]">Breed</span>
                 <input
                   list="breed-options"
                   value={form.breed}
                   onChange={(e) => updateForm("breed", e.target.value)}
-                  className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]"
+                  className="h-11 w-full rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]"
                 />
                 <datalist id="breed-options">{BREEDS.map((b) => <option key={b} value={b} />)}</datalist>
               </label>
               <label className="space-y-2">
-                <span className="text-sm text-[var(--color-ink-soft)]">Age (years)</span>
+                <span className="text-sm text-[var(--color-ink-500)]">Age (years)</span>
                 <input
                   type="number" min={0} value={form.age}
                   onChange={(e) => updateForm("age", e.target.value)}
-                  className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]"
+                  className="h-11 w-full rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]"
                 />
-                <p className="text-xs text-[var(--color-ink-soft)]">Works for all ages — from puppies to seniors</p>
+                <p className="text-xs text-[var(--color-ink-500)]">Works for all ages — from puppies to seniors</p>
               </label>
               <div className="space-y-2">
-                <span className="text-sm text-[var(--color-ink-soft)]">Weight</span>
+                <span className="text-sm text-[var(--color-ink-500)]">Weight</span>
                 <div className="flex gap-2">
                   <input
                     type="number" min={0} value={form.weight}
                     onChange={(e) => updateForm("weight", e.target.value)}
-                    className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]"
+                    className="h-11 w-full rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]"
                   />
-                  <div className="inline-flex rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] p-1">
+                  <div className="inline-flex rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-1">
                     {(["kg", "lbs"] as const).map((unit) => (
                       <button
                         key={unit} type="button" onClick={() => updateForm("weightUnit", unit)}
-                        className={`rounded-lg px-3 py-1 text-sm ${form.weightUnit === unit ? "bg-[var(--color-accent)] text-[var(--color-cream)]" : "text-[var(--color-ink-soft)]"}`}
+                        className={`rounded-lg px-3 py-1 text-sm ${form.weightUnit === unit ? "bg-[var(--color-coral)] text-[var(--color-warm-white)]" : "text-[var(--color-ink-500)]"}`}
                       >{unit}</button>
                     ))}
                   </div>
                 </div>
               </div>
               <div className="space-y-2">
-                <span className="text-sm text-[var(--color-ink-soft)]">Monthly food spend (optional)</span>
+                <span className="text-sm text-[var(--color-ink-500)]">Monthly food spend (optional)</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-[var(--color-ink-soft)]">£/€</span>
+                  <span className="text-sm font-semibold text-[var(--color-ink-500)]">£/€</span>
                   <input
                     type="number"
                     min={0}
                     value={form.foodSpendMonthly}
                     onChange={(e) => updateForm("foodSpendMonthly", e.target.value)}
                     placeholder="e.g. 65"
-                    className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]"
+                    className="h-11 w-full rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]"
                   />
                 </div>
-                <p className="text-xs text-[var(--color-ink-soft)]">Tell us what you currently spend — we&apos;ll try to beat it.</p>
+                <p className="text-xs text-[var(--color-ink-500)]">Tell us what you currently spend — we&apos;ll try to beat it.</p>
               </div>
               <div className="space-y-2">
-                <span className="text-sm text-[var(--color-ink-soft)]">Sex</span>
+                <span className="text-sm text-[var(--color-ink-500)]">Sex</span>
                 <div className="grid grid-cols-2 gap-2">
                   {([
                     { value: "male_intact", label: "Male (intact)" },
@@ -718,15 +904,26 @@ function OnboardPage() {
                   ] as const).map(({ value, label }) => (
                     <button
                       key={value} type="button" onClick={() => updateForm("sex", value)}
-                      className={`rounded-xl border px-4 py-2.5 text-sm transition-colors ${form.sex === value ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]" : "border-[var(--color-border-strong)] text-[var(--color-ink-soft)] hover:border-[var(--color-accent)]"}`}
+                      className={`rounded-xl border px-4 py-2.5 text-sm transition-colors ${form.sex === value ? "border-[var(--color-coral)] bg-[var(--color-coral)] text-[var(--color-warm-white)]" : "border-[var(--color-sand-deep)] text-[var(--color-ink-500)] hover:border-[var(--color-coral)]"}`}
                     >
                       {label}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-[var(--color-ink-soft)]">Neutered and spayed dogs need slightly fewer calories — we adjust the recipes automatically.</p>
+                <p className="text-xs text-[var(--color-ink-500)]">Neutered and spayed dogs need slightly fewer calories — we adjust the recipes automatically.</p>
               </div>
             </div>
+            {isEditMode && dogId && (
+              <div className="border-t border-[var(--color-sand-deep)] pt-4">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/dogs/${dogId}/delete`)}
+                  className="text-sm text-[var(--color-ink-300)] hover:text-[var(--color-ink-500)] transition-colors"
+                >
+                  Delete {form.dogName ? `${form.dogName}'s profile` : "this profile"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -735,17 +932,17 @@ function OnboardPage() {
           <div className="space-y-6">
             <div>
               <h1 className="font-heading text-4xl text-[var(--color-ink)]">Their health profile</h1>
-              <p className="mt-1 text-[var(--color-ink-soft)]">Every dog is different. The more you tell us, the better we can tailor their recipes.</p>
+              <p className="mt-1 text-[var(--color-ink-500)]">Every dog is different. The more you tell us, the better we can tailor their recipes.</p>
             </div>
             <div className="space-y-3">
-              <p className="text-sm text-[var(--color-ink-soft)]">Any health conditions?</p>
+              <p className="text-sm text-[var(--color-ink-500)]">Any health conditions?</p>
               <div className="flex flex-wrap gap-2">
                 {HEALTH_OPTIONS.map((condition) => {
                   const selected = form.healthConditions.includes(condition);
                   return (
                     <button
                       key={condition} type="button" onClick={() => toggleHealthCondition(condition)}
-                      className={`rounded-full border px-4 py-2 text-sm transition-colors ${selected ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]" : "border-[var(--color-border-strong)] text-[var(--color-ink-soft)]"}`}
+                      className={`rounded-full border px-4 py-2 text-sm transition-colors ${selected ? "border-[var(--color-coral)] bg-[var(--color-coral)] text-[var(--color-warm-white)]" : "border-[var(--color-sand-deep)] text-[var(--color-ink-500)]"}`}
                     >{condition}</button>
                   );
                 })}
@@ -764,12 +961,12 @@ function OnboardPage() {
                   )}
                   {form.healthConditions.includes("Allergies") && (
                     <DetailBlock title="Which allergens has your vet confirmed?">
-                      <input value={form.vetConfirmedAllergens} onChange={(e) => updateForm("vetConfirmedAllergens", e.target.value)} className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]" />
+                      <input value={form.vetConfirmedAllergens} onChange={(e) => updateForm("vetConfirmedAllergens", e.target.value)} className="h-11 w-full rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]" />
                     </DetailBlock>
                   )}
                   {form.healthConditions.includes("Overweight") && (
                     <DetailBlock title="Has your vet given a target weight? (optional)">
-                      <input type="number" min={0} value={form.overweightTargetWeightKg} onChange={(e) => updateForm("overweightTargetWeightKg", e.target.value)} className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]" />
+                      <input type="number" min={0} value={form.overweightTargetWeightKg} onChange={(e) => updateForm("overweightTargetWeightKg", e.target.value)} className="h-11 w-full rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]" />
                     </DetailBlock>
                   )}
                   {form.healthConditions.includes("Heart Disease") && (
@@ -782,43 +979,43 @@ function OnboardPage() {
                       <div className="flex flex-wrap gap-2">
                         {(["yes", "no"] as const).map((option) => (
                           <button key={option} type="button" onClick={() => updateForm("jointSupplementsTaking", option)}
-                            className={`rounded-full border px-4 py-2 text-sm transition-colors ${form.jointSupplementsTaking === option ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]" : "border-[var(--color-border-strong)] text-[var(--color-ink-soft)]"}`}
+                            className={`rounded-full border px-4 py-2 text-sm transition-colors ${form.jointSupplementsTaking === option ? "border-[var(--color-coral)] bg-[var(--color-coral)] text-[var(--color-warm-white)]" : "border-[var(--color-sand-deep)] text-[var(--color-ink-500)]"}`}
                           >{option === "yes" ? "Yes" : "No"}</button>
                         ))}
                       </div>
                       {form.jointSupplementsTaking === "yes" && (
                         <div className="mt-4">
-                          <p className="text-sm text-[var(--color-ink-soft)]">Which supplements?</p>
-                          <input value={form.jointSupplementsText} onChange={(e) => updateForm("jointSupplementsText", e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]" />
+                          <p className="text-sm text-[var(--color-ink-500)]">Which supplements?</p>
+                          <input value={form.jointSupplementsText} onChange={(e) => updateForm("jointSupplementsText", e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]" />
                         </div>
                       )}
                     </DetailBlock>
                   )}
                   {form.healthConditions.includes("Sensitive Stomach") && (
                     <DetailBlock title="Any known trigger foods? (optional)">
-                      <textarea value={form.sensitiveStomachTriggers} onChange={(e) => updateForm("sensitiveStomachTriggers", e.target.value)} className="min-h-24 w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] p-4 outline-none focus:border-[var(--color-accent)]" />
+                      <textarea value={form.sensitiveStomachTriggers} onChange={(e) => updateForm("sensitiveStomachTriggers", e.target.value)} className="min-h-24 w-full resize-none rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-4 outline-none focus:border-[var(--color-coral)]" />
                     </DetailBlock>
                   )}
                   {form.healthConditions.includes("Cancer") && (
                     <DetailBlock title="Type of cancer if known (optional)">
-                      <input value={form.cancerType} onChange={(e) => updateForm("cancerType", e.target.value)} className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] px-4 outline-none focus:border-[var(--color-accent)]" />
+                      <input value={form.cancerType} onChange={(e) => updateForm("cancerType", e.target.value)} className="h-11 w-full rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]" />
                     </DetailBlock>
                   )}
                 </div>
               )}
             </div>
             <div className="space-y-3">
-              <p className="text-sm text-[var(--color-ink-soft)]">How active are they?</p>
+              <p className="text-sm text-[var(--color-ink-500)]">How active are they?</p>
               <div className="grid gap-3 md:grid-cols-2">
                 {ACTIVITY_LEVELS.map((level) => {
                   const selected = form.activityLevel === level.id;
                   return (
                     <button key={level.id} type="button" onClick={() => updateForm("activityLevel", level.id)}
-                      className={`rounded-2xl border p-4 text-left transition-colors ${selected ? "border-[var(--color-accent)] bg-[var(--color-accent)]" : "border-[var(--color-border-strong)] bg-transparent"}`}
+                      className={`rounded-2xl border p-4 text-left transition-colors ${selected ? "border-[var(--color-coral)] bg-[var(--color-coral)]" : "border-[var(--color-sand-deep)] bg-transparent"}`}
                     >
-                      <p className={`text-xl ${selected ? "text-[var(--color-cream)]" : ""}`}>{level.emoji}</p>
-                      <p className={`mt-2 font-semibold ${selected ? "text-[var(--color-cream)]" : "text-[var(--color-ink)]"}`}>{level.title}</p>
-                      <p className={`text-sm ${selected ? "text-[var(--color-cream)]/90" : "text-[var(--color-ink-soft)]"}`}>{level.description}</p>
+                      <p className={`text-xl ${selected ? "text-[var(--color-warm-white)]" : ""}`}>{level.emoji}</p>
+                      <p className={`mt-2 font-semibold ${selected ? "text-[var(--color-warm-white)]" : "text-[var(--color-ink)]"}`}>{level.title}</p>
+                      <p className={`text-sm ${selected ? "text-[var(--color-warm-white)]/90" : "text-[var(--color-ink-500)]"}`}>{level.description}</p>
                     </button>
                   );
                 })}
@@ -832,35 +1029,35 @@ function OnboardPage() {
           <div className="space-y-6">
             <div>
               <h1 className="font-heading text-4xl text-[var(--color-ink)]">Diet and sensitivities</h1>
-              <p className="mt-1 text-[var(--color-ink-soft)]">We&apos;ll make sure nothing goes in the bowl that shouldn&apos;t be there.</p>
+              <p className="mt-1 text-[var(--color-ink-500)]">We&apos;ll make sure nothing goes in the bowl that shouldn&apos;t be there.</p>
             </div>
             <div className="space-y-3">
-              <p className="text-sm text-[var(--color-ink-soft)]">Cooking style</p>
-              <div className="inline-flex rounded-full border border-[var(--color-border-strong)] bg-[var(--color-cream)] p-1">
+              <p className="text-sm text-[var(--color-ink-500)]">Cooking style</p>
+              <div className="inline-flex rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-1">
                 {(["Cooked", "Raw (BARF)"] as const).map((diet) => (
                   <button key={diet} type="button" onClick={() => updateForm("dietType", diet)}
-                    className={`rounded-full px-5 py-2 text-sm transition-colors ${form.dietType === diet ? "bg-[var(--color-accent)] text-[var(--color-cream)]" : "text-[var(--color-ink-soft)]"}`}
+                    className={`rounded-full px-5 py-2 text-sm transition-colors ${form.dietType === diet ? "bg-[var(--color-coral)] text-[var(--color-warm-white)]" : "text-[var(--color-ink-500)]"}`}
                   >{diet}</button>
                 ))}
               </div>
             </div>
             <div className="space-y-3">
-              <p className="text-sm text-[var(--color-ink-soft)]">Ingredients to avoid</p>
-              <p className="text-xs text-[var(--color-ink-soft)]">We&apos;ll never include these in any recipe.</p>
+              <p className="text-sm text-[var(--color-ink-500)]">Ingredients to avoid</p>
+              <p className="text-xs text-[var(--color-ink-500)]">We&apos;ll never include these in any recipe.</p>
               <div className="flex flex-wrap gap-2">
                 {ALLERGENS.map((allergen) => {
                   const selected = form.allergens.includes(allergen);
                   return (
                     <button key={allergen} type="button" onClick={() => toggleAllergen(allergen)}
-                      className={`rounded-full border px-4 py-2 text-sm transition-colors ${selected ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]" : "border-[var(--color-border-strong)] text-[var(--color-ink-soft)]"}`}
+                      className={`rounded-full border px-4 py-2 text-sm transition-colors ${selected ? "border-[var(--color-coral)] bg-[var(--color-coral)] text-[var(--color-warm-white)]" : "border-[var(--color-sand-deep)] text-[var(--color-ink-500)]"}`}
                     >{allergen}</button>
                   );
                 })}
               </div>
             </div>
             <label className="space-y-2">
-              <span className="text-sm text-[var(--color-ink-soft)]">Anything else to exclude?</span>
-              <textarea value={form.otherAvoid} onChange={(e) => updateForm("otherAvoid", e.target.value)} placeholder="e.g. peanuts, sweet potato..." className="min-h-28 w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] p-4 outline-none focus:border-[var(--color-accent)]" />
+              <span className="text-sm text-[var(--color-ink-500)]">Anything else to exclude?</span>
+              <textarea value={form.otherAvoid} onChange={(e) => updateForm("otherAvoid", e.target.value)} placeholder="e.g. peanuts, sweet potato..." className="min-h-28 w-full resize-none rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-4 outline-none focus:border-[var(--color-coral)]" />
             </label>
           </div>
         )}
@@ -870,25 +1067,25 @@ function OnboardPage() {
           <div className="space-y-6">
             <div>
               <h1 className="font-heading text-4xl text-[var(--color-ink)]">What&apos;s the goal?</h1>
-              <p className="mt-1 text-[var(--color-ink-soft)]">What would you like to achieve with home cooking?</p>
+              <p className="mt-1 text-[var(--color-ink-500)]">What would you like to achieve with home cooking?</p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {GOALS.map((goal) => {
                 const selected = form.goal === goal.id;
                 return (
                   <button key={goal.id} type="button" onClick={() => updateForm("goal", goal.id)}
-                    className={`rounded-2xl border p-4 text-left transition-colors ${selected ? "border-[var(--color-accent)] bg-[var(--color-accent)]" : "border-[var(--color-border-strong)] bg-transparent"}`}
+                    className={`rounded-2xl border p-4 text-left transition-colors ${selected ? "border-[var(--color-coral)] bg-[var(--color-coral)]" : "border-[var(--color-sand-deep)] bg-transparent"}`}
                   >
-                    <p className={`text-xl ${selected ? "text-[var(--color-cream)]" : "text-[var(--color-ink)]"}`}>{goal.emoji}</p>
-                    <p className={`mt-2 font-semibold ${selected ? "text-[var(--color-cream)]" : "text-[var(--color-ink)]"}`}>{goal.title}</p>
-                    <p className={`text-sm ${selected ? "text-[var(--color-cream)]/90" : "text-[var(--color-ink-soft)]"}`}>{goal.description}</p>
+                    <p className={`text-xl ${selected ? "text-[var(--color-warm-white)]" : "text-[var(--color-ink)]"}`}>{goal.emoji}</p>
+                    <p className={`mt-2 font-semibold ${selected ? "text-[var(--color-warm-white)]" : "text-[var(--color-ink)]"}`}>{goal.title}</p>
+                    <p className={`text-sm ${selected ? "text-[var(--color-warm-white)]/90" : "text-[var(--color-ink-500)]"}`}>{goal.description}</p>
                   </button>
                 );
               })}
             </div>
             <label className="space-y-2">
-              <span className="text-sm text-[var(--color-ink-soft)]">Anything else we should know about them?</span>
-              <textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} placeholder="Any extra context that might help us get the recipes right..." className="min-h-28 w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] p-4 outline-none focus:border-[var(--color-accent)]" />
+              <span className="text-sm text-[var(--color-ink-500)]">Anything else we should know about them?</span>
+              <textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} placeholder="Any extra context that might help us get the recipes right..." className="min-h-28 w-full resize-none rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-4 outline-none focus:border-[var(--color-coral)]" />
             </label>
           </div>
         )}
@@ -896,10 +1093,10 @@ function OnboardPage() {
         {/* ── Step 5: Summary ── */}
         {step === 5 && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-cream)] p-6">
+            <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6">
               <h1 className="font-heading text-3xl text-[var(--color-ink)]">{form.dogName}&apos;s plan is ready to build.</h1>
-              <p className="mt-2 text-sm text-[var(--color-ink-soft)]">Check everything looks right, then we&apos;ll get cooking.</p>
-              <div className="mt-5 grid gap-3 text-sm md:grid-cols-2">
+              <p className="mt-2 text-sm text-[var(--color-ink-500)]">Check everything looks right, then we&apos;ll get cooking.</p>
+              <div className="mt-5 text-sm">
                 <SummaryRow label="Breed" value={form.breed} />
                 <SummaryRow label="Age" value={`${form.age} years`} />
                 <SummaryRow label="Weight" value={`${form.weight} ${form.weightUnit}`} />
@@ -950,18 +1147,18 @@ function OnboardPage() {
                   type="button"
                   onClick={generateRecipes}
                   disabled={isGenerating}
-                  className={`rounded-full bg-[var(--color-accent)] px-7 py-3 text-sm font-semibold text-[var(--color-cream)] ${isGenerating ? "animate-pulse" : "transition-transform hover:-translate-y-0.5"}`}
+                  className={`rounded-full bg-[var(--color-coral)] px-7 py-3 text-sm font-semibold text-[var(--color-warm-white)] ${isGenerating ? "animate-pulse" : "transition-transform hover:-translate-y-0.5"}`}
                 >
                   {isGenerating ? `Building ${form.dogName}'s recipe plan...` : `Generate ${form.dogName}'s recipes →`}
                 </button>
-                <p className="text-xs text-[var(--color-ink-soft)]">
+                <p className="text-xs text-[var(--color-ink-500)]">
                   Recipup recipes are a guide, not medical advice. Always speak to your vet before making significant dietary changes, especially if your dog has a health condition.
                 </p>
               </>
             )}
 
-            {isLoggedIn && (
-              <p className="text-sm text-[var(--color-ink-soft)]">
+            {isLoggedIn && !isEditMode && (
+              <p className="text-sm text-[var(--color-ink-500)]">
                 Up next: tell us what&apos;s in your kitchen. We&apos;ll build recipes around what you already have — and flag anything to pick up.
               </p>
             )}
@@ -972,19 +1169,19 @@ function OnboardPage() {
         {step === 6 && isLoggedIn && (
           <div className="space-y-4">
             <h1 className="font-heading text-4xl text-[var(--color-ink)]">What&apos;s in your kitchen?</h1>
-            <p className="text-[var(--color-ink-soft)]">
+            <p className="text-[var(--color-ink-500)]">
               Tell us what you&apos;ve got — we&apos;ll build around it. Anything you&apos;re missing will go straight on your shopping list.
             </p>
 
             {pantryLastUpdated && (
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-cream)] px-4 py-3 text-sm text-[var(--color-ink-soft)]">
+              <div className="rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-4 py-3 text-sm text-[var(--color-ink-500)]">
                 Last updated {timeAgo(pantryLastUpdated)} — anything changed?
               </div>
             )}
 
             {/* Section A: Ingredients */}
             <CollapsibleSection
-              title="Ingredients you have 🥩"
+              title="Ingredients"
               open={openSections.ingredients}
               onToggle={() => toggleSection("ingredients")}
             >
@@ -1007,7 +1204,7 @@ function OnboardPage() {
                 <button
                   type="button"
                   onClick={addCustomIngredient}
-                  className="mt-1 text-sm text-[var(--color-accent)] hover:underline"
+                  className="mt-1 text-sm text-[var(--color-coral)] hover:underline"
                 >
                   + Add ingredient
                 </button>
@@ -1016,7 +1213,7 @@ function OnboardPage() {
 
             {/* Section B: Supplements */}
             <CollapsibleSection
-              title="Supplements 💊"
+              title="Supplements"
               open={openSections.supplements}
               onToggle={() => toggleSection("supplements")}
             >
@@ -1039,7 +1236,7 @@ function OnboardPage() {
                 <button
                   type="button"
                   onClick={addCustomSupplement}
-                  className="mt-1 text-sm text-[var(--color-accent)] hover:underline"
+                  className="mt-1 text-sm text-[var(--color-coral)] hover:underline"
                 >
                   + Add supplement
                 </button>
@@ -1048,7 +1245,7 @@ function OnboardPage() {
 
             {/* Section C: Equipment */}
             <CollapsibleSection
-              title="Kitchen equipment 🍲"
+              title="Kitchen equipment"
               open={openSections.equipment}
               onToggle={() => toggleSection("equipment")}
             >
@@ -1071,19 +1268,19 @@ function OnboardPage() {
         <button
           type="button"
           onClick={goBack}
-          className="rounded-full border border-[var(--color-border-strong)] px-5 py-2 text-sm text-[var(--color-ink)]"
+          className="rounded-full border border-[var(--color-sand-deep)] px-5 py-2 text-sm text-[var(--color-ink)]"
         >
-          {step === 1 ? "← Back to home" : "Back"}
+          {step === 1 ? (dogId ? "← Back to profile" : "← Back to home") : "Back"}
         </button>
 
         {step === 6 && isLoggedIn ? (
-          // Step 6 nav: Skip + Generate
+          // Step 6 nav: Skip + Generate (only reachable via regen/kitchen-only flow)
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={generateWithPantry}
               disabled={isGenerating}
-              className="text-sm text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]"
+              className="text-sm text-[var(--color-ink-500)] hover:text-[var(--color-coral)]"
             >
               Skip for now — I&apos;ll update this later
             </button>
@@ -1091,17 +1288,26 @@ function OnboardPage() {
               type="button"
               onClick={generateWithPantry}
               disabled={isGenerating}
-              className={`rounded-full bg-[var(--color-accent)] px-7 py-3 text-sm font-semibold text-[var(--color-cream)] ${isGenerating ? "animate-pulse" : "transition-transform hover:-translate-y-0.5"}`}
+              className={`rounded-full bg-[var(--color-coral)] px-7 py-3 text-sm font-semibold text-[var(--color-warm-white)] ${isGenerating ? "animate-pulse" : "transition-transform hover:-translate-y-0.5"}`}
             >
               {generateButtonLabel}
             </button>
           </div>
+        ) : isEditMode && step === totalSteps ? (
+          // Edit mode final step: save only, no generation
+          <button
+            type="button"
+            onClick={saveProfileOnly}
+            className="rounded-full bg-[var(--color-coral)] px-7 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+          >
+            Save changes →
+          </button>
         ) : step < totalSteps ? (
           <button
             type="button"
             onClick={goNext}
             disabled={!canGoNext}
-            className="rounded-full bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-[var(--color-cream)] disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full bg-[var(--color-coral)] px-5 py-2 text-sm font-semibold text-[var(--color-warm-white)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             Continue →
           </button>
@@ -1110,7 +1316,7 @@ function OnboardPage() {
           <button
             type="button"
             onClick={() => router.push("/")}
-            className="rounded-full border border-[var(--color-border-strong)] px-5 py-2 text-sm text-[var(--color-ink)]"
+            className="rounded-full border border-[var(--color-sand-deep)] px-5 py-2 text-sm text-[var(--color-ink)]"
           >
             ← Return home
           </button>
@@ -1126,17 +1332,17 @@ function CollapsibleSection({
   title, open, onToggle, children,
 }: { title: string; open: boolean; onToggle: () => void; children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-cream)]">
+    <div className="overflow-hidden rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)]">
       <button
         type="button"
         onClick={onToggle}
         className="flex w-full items-center justify-between px-5 py-4 text-left"
       >
         <span className="font-semibold text-[var(--color-ink)]">{title}</span>
-        <span className="text-xs text-[var(--color-ink-soft)]">{open ? "▲" : "▼"}</span>
+        <span className="text-xs text-[var(--color-ink-500)]">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
-        <div className="border-t border-[var(--color-border)] px-5 pb-5 pt-4">
+        <div className="border-t border-[var(--color-sand-deep)] px-5 pb-5 pt-4">
           {children}
         </div>
       )}
@@ -1155,7 +1361,7 @@ function IngredientRowUI({
           value={row.name}
           placeholder="Ingredient name"
           onChange={(e) => onUpdate({ ...row, name: e.target.value })}
-          className="h-8 w-36 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-cream-soft)] px-2 text-sm outline-none focus:border-[var(--color-accent)]"
+          className="h-8 w-36 rounded-lg border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-2 text-sm outline-none focus:border-[var(--color-coral)]"
         />
       ) : (
         <span className="w-36 flex-shrink-0 text-sm capitalize text-[var(--color-ink)]">{row.name}</span>
@@ -1169,33 +1375,33 @@ function IngredientRowUI({
             value={row.quantity}
             onChange={(e) => onUpdate({ ...row, quantity: e.target.value })}
             placeholder="qty"
-            className="h-8 w-20 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-cream-soft)] px-2 text-sm outline-none focus:border-[var(--color-accent)]"
+            className="h-8 w-20 rounded-lg border border-[var(--color-sand-deep)] bg-[var(--color-sand)] px-2 text-sm outline-none focus:border-[var(--color-coral)]"
           />
-          <span className="text-xs text-[var(--color-ink-soft)]">{row.unit}</span>
-          <label className="flex items-center gap-1.5 text-xs text-[var(--color-ink-soft)]">
+          <span className="text-xs text-[var(--color-ink-500)]">{row.unit}</span>
+          <label className="flex items-center gap-1.5 text-xs text-[var(--color-ink-500)]">
             <input
               type="checkbox"
               checked={row.isRunningLow}
               onChange={(e) => onUpdate({ ...row, isRunningLow: e.target.checked })}
-              className="accent-[var(--color-accent)]"
+              className="accent-[var(--color-coral)]"
             />
             Running low
           </label>
         </>
       )}
 
-      <div className="ml-auto inline-flex rounded-full border border-[var(--color-border-strong)] bg-[var(--color-cream-soft)] p-0.5 text-xs">
+      <div className="ml-auto inline-flex rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-sand)] p-0.5 text-xs">
         <button
           type="button"
           onClick={() => onUpdate({ ...row, isAvailable: true })}
-          className={`rounded-full px-3 py-1 transition-colors ${row.isAvailable ? "bg-[var(--color-accent)] text-[var(--color-cream)]" : "text-[var(--color-ink-soft)]"}`}
+          className={`rounded-full px-3 py-1 transition-colors ${row.isAvailable ? "bg-[var(--color-coral)] text-[var(--color-warm-white)]" : "text-[var(--color-ink-500)]"}`}
         >
           Have it
         </button>
         <button
           type="button"
           onClick={() => onUpdate({ ...row, isAvailable: false })}
-          className={`rounded-full px-3 py-1 transition-colors ${!row.isAvailable ? "bg-[var(--color-border-strong)] text-[var(--color-ink)]" : "text-[var(--color-ink-soft)]"}`}
+          className={`rounded-full px-3 py-1 transition-colors ${!row.isAvailable ? "bg-[var(--color-sand-deep)] text-[var(--color-ink)]" : "text-[var(--color-ink-500)]"}`}
         >
           Don&apos;t have
         </button>
@@ -1212,25 +1418,25 @@ function EquipmentRowUI({
     <div>
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm capitalize text-[var(--color-ink)]">{row.name}</span>
-        <div className="inline-flex rounded-full border border-[var(--color-border-strong)] bg-[var(--color-cream-soft)] p-0.5 text-xs">
+        <div className="inline-flex rounded-full border border-[var(--color-sand-deep)] bg-[var(--color-sand)] p-0.5 text-xs">
           <button
             type="button"
             onClick={() => onUpdate({ ...row, isAvailable: true })}
-            className={`rounded-full px-3 py-1 transition-colors ${row.isAvailable ? "bg-[var(--color-accent)] text-[var(--color-cream)]" : "text-[var(--color-ink-soft)]"}`}
+            className={`rounded-full px-3 py-1 transition-colors ${row.isAvailable ? "bg-[var(--color-coral)] text-[var(--color-warm-white)]" : "text-[var(--color-ink-500)]"}`}
           >
             Have it
           </button>
           <button
             type="button"
             onClick={() => onUpdate({ ...row, isAvailable: false })}
-            className={`rounded-full px-3 py-1 transition-colors ${!row.isAvailable ? "bg-[var(--color-border-strong)] text-[var(--color-ink)]" : "text-[var(--color-ink-soft)]"}`}
+            className={`rounded-full px-3 py-1 transition-colors ${!row.isAvailable ? "bg-[var(--color-sand-deep)] text-[var(--color-ink)]" : "text-[var(--color-ink-500)]"}`}
           >
             Don&apos;t have
           </button>
         </div>
       </div>
       {!row.isAvailable && affectsRecipes && (
-        <p className="mt-1 text-xs italic text-[var(--color-accent)]">
+        <p className="mt-1 text-xs italic text-[var(--color-coral)]">
           We&apos;ll only show recipes you can make with your current equipment.
         </p>
       )}
@@ -1240,7 +1446,7 @@ function EquipmentRowUI({
 
 function DetailBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="border-l-4 border-[var(--color-accent)] bg-[var(--color-cream-soft)] py-4 pl-4">
+    <div className="rounded-xl border border-[var(--color-sand-deep)] bg-[var(--color-sand)] p-4">
       <p className="text-sm font-semibold text-[var(--color-ink)]">{title}</p>
       <div className="mt-3">{children}</div>
     </div>
@@ -1257,7 +1463,7 @@ function SingleSelectChips<T extends { id: string; label: string }>(props: {
         return (
           <button
             key={opt.id} type="button" onClick={() => props.onChange(opt.id)}
-            className={`rounded-full border px-4 py-2 text-sm transition-colors ${selected ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-cream)]" : "border-[var(--color-border-strong)] text-[var(--color-ink-soft)]"}`}
+            className={`rounded-full border px-4 py-2 text-sm transition-colors ${selected ? "border-[var(--color-coral)] bg-[var(--color-coral)] text-[var(--color-warm-white)]" : "border-[var(--color-sand-deep)] text-[var(--color-ink-500)]"}`}
           >{opt.label}</button>
         );
       })}
@@ -1267,9 +1473,9 @@ function SingleSelectChips<T extends { id: string; label: string }>(props: {
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-cream-soft)] px-3 py-2">
-      <p className="text-xs uppercase tracking-[0.12em] text-[var(--color-accent)]">{label}</p>
-      <p className="mt-1 text-[var(--color-ink)]">{value || "—"}</p>
+    <div className="flex items-baseline justify-between gap-2 border-b border-[var(--color-sand-deep)] py-2.5">
+      <span className="text-sm text-[var(--color-ink-500)]">{label}</span>
+      <span className="text-right text-sm font-medium text-[var(--color-ink)]">{value || "—"}</span>
     </div>
   );
 }

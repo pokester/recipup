@@ -116,20 +116,30 @@ export default async function AccountPage() {
             </div>
           )}
 
-          {!inTrial && tier !== "free" && (
+          {!inTrial && tier === "founding" && (
+            <div className="mt-4">
+              <p className="text-sm text-[var(--color-ink-500)]">
+                £1.50/month — locked in forever. Your founding price never changes.
+              </p>
+              {renewsAt && (
+                <p className="mt-1 text-sm text-[var(--color-ink-500)]">Renews {renewsAt}</p>
+              )}
+              <p className="mt-4 text-xs text-[var(--color-ink-300)]">
+                To manage your subscription, email{" "}
+                <a href="mailto:hello@recipup.co" className="underline">hello@recipup.co</a>
+              </p>
+            </div>
+          )}
+
+          {!inTrial && tier !== "free" && tier !== "founding" && (
             <div className="mt-4">
               {renewsAt && (
                 <p className="text-sm text-[var(--color-ink-500)]">Renews {renewsAt}</p>
               )}
-              <button
-                type="button"
-                disabled
-                className="mt-4 rounded-full border border-[var(--color-sand-deep)] px-5 py-2.5 text-sm font-semibold text-[var(--color-ink-300)] opacity-60"
-                title="Stripe billing portal — coming soon"
-              >
-                Manage subscription →
-              </button>
-              <p className="mt-1 text-xs text-[var(--color-ink-300)]">Billing portal coming soon.</p>
+              <p className="mt-4 text-xs text-[var(--color-ink-300)]">
+                To manage your subscription, email{" "}
+                <a href="mailto:hello@recipup.co" className="underline">hello@recipup.co</a>
+              </p>
             </div>
           )}
 

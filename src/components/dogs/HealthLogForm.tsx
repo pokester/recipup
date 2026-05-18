@@ -30,7 +30,7 @@ const ENERGY_OPTIONS = [
 ] as const;
 
 const APPETITE_OPTIONS = [
-  { value: "refusing", label: "Refusing" },
+  { value: "refusing", label: "Not eating" },
   { value: "reduced", label: "Reduced" },
   { value: "normal", label: "Normal" },
   { value: "enthusiastic", label: "Enthusiastic" },
@@ -129,7 +129,7 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
         }),
       });
       if (!res.ok) throw new Error("Failed to save");
-      router.push(`/dogs/${dogId}#health`);
+      router.push(`/dogs/${dogId}#track`);
     } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
@@ -182,6 +182,7 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
         {/* Coat score */}
         <div className="mt-6">
           <label className="block text-sm font-semibold text-[var(--color-ink)]">Coat and skin condition</label>
+          <p className="mt-1 text-xs text-[var(--color-ink-500)]">1 = very dull or flaky · 5 = glossy and healthy</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -198,7 +199,6 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-[var(--color-ink-300)]">1 = very dull/flaky · 5 = glossy and healthy</p>
         </div>
 
         {/* Appetite */}
@@ -214,8 +214,8 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
         </div>
       </section>
 
-      {/* Optional section */}
-      <section className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
+      {/* Optional section — inline toggle, no card wrapper */}
+      <div>
         <button
           type="button"
           onClick={() => setShowOptional((v) => !v)}
@@ -223,9 +223,12 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
         >
           {showOptional ? "− Less detail" : "+ Add more detail"}
         </button>
+        {hasJointCondition && !showOptional && (
+          <p className="mt-1 text-xs text-[var(--color-ink-300)]">Showing fields relevant to {dogName}&apos;s profile.</p>
+        )}
 
         {showOptional && (
-          <div className="mt-6 space-y-6">
+          <div className="mt-6 space-y-6 border-t border-[var(--color-sand-deep)] pt-6">
             <div>
               <label className="block text-sm font-semibold text-[var(--color-ink)]">Any itching or scratching?</label>
               <div className="mt-2">
@@ -268,18 +271,23 @@ export function HealthLogForm({ dogId, dogName, hasJointCondition, defaultValues
             </div>
           </div>
         )}
-      </section>
+      </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={!isValid || submitting}
-        className="w-full rounded-full bg-[var(--color-coral)] py-4 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-40"
-      >
-        {submitting ? "Saving..." : "Save this week's log →"}
-      </button>
+      <div>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!isValid || submitting}
+          className="w-full rounded-full bg-[var(--color-coral)] py-4 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-40"
+        >
+          {submitting ? "Saving..." : "Save this week's log →"}
+        </button>
+        {!hasCoreMetric && (
+          <p className="mt-2 text-center text-xs text-[var(--color-ink-500)]">Fill in at least one field above to save.</p>
+        )}
+      </div>
 
       <p className="text-center text-xs text-[var(--color-ink-300)]">
         Recipup recipes are a guide, not medical advice. Always speak to your vet before making significant dietary changes, especially if your dog has a health condition.

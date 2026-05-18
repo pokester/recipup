@@ -446,14 +446,13 @@ export function PlanView({ planId }: { planId: string }) {
               return (
                 <div key={day.id} className="flex flex-col">
                   <div
-                    className={`flex flex-1 flex-col rounded-2xl border bg-[var(--color-warm-white)] p-3 ${
+                    className={`flex flex-1 flex-col rounded-2xl border p-3 ${
                       isToday
-                        ? "border-2 border-[var(--color-coral)]"
+                        ? "border-2 border-[var(--color-coral)] bg-[var(--color-warm-white)]"
                         : day.is_pinned
-                        ? "border-l-4 border-[var(--color-sand-deep)]"
-                        : "border-[var(--color-sand-deep)]"
+                        ? "border-[var(--color-sand-deep)] bg-[var(--color-sand)]"
+                        : "border-[var(--color-sand-deep)] bg-[var(--color-warm-white)]"
                     }`}
-                    style={day.is_pinned && !isToday ? { borderLeftColor: "var(--color-coral)" } : undefined}
                   >
                     <div className="mb-2 flex items-start justify-between">
                       <div>
@@ -562,14 +561,13 @@ export function PlanView({ planId }: { planId: string }) {
               return (
                 <div
                   key={day.id}
-                  className={`rounded-2xl border bg-[var(--color-warm-white)] ${
+                  className={`rounded-2xl border ${
                     isToday
-                      ? "border-2 border-[var(--color-coral)]"
+                      ? "border-2 border-[var(--color-coral)] bg-[var(--color-warm-white)]"
                       : day.is_pinned
-                      ? "border-l-4 border-[var(--color-sand-deep)]"
-                      : "border-[var(--color-sand-deep)]"
+                      ? "border-[var(--color-sand-deep)] bg-[var(--color-sand)]"
+                      : "border-[var(--color-sand-deep)] bg-[var(--color-warm-white)]"
                   }`}
-                  style={day.is_pinned && !isToday ? { borderLeftColor: "var(--color-coral)" } : undefined}
                 >
                   <button
                     type="button"
@@ -687,7 +685,7 @@ export function PlanView({ planId }: { planId: string }) {
 
       {/* Delete confirmation dialog */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60">
           <div className="mx-4 max-w-md rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-xl">
             <h3 className="font-heading text-xl text-[var(--color-ink)]">Delete this plan?</h3>
             <p className="mt-2 text-sm text-[var(--color-ink-500)]">
