@@ -2,19 +2,48 @@
 
 /* ─── Design tokens ─────────────────────────────────────────────────── */
 :root {
-  /* Palette */
-  --color-warm-white:   #FDFAF6;
+  /* Surfaces */
+  --color-warm-white:   #FDFAF6;   /* cards, surfaces */
+  --color-oat:          #F7F3ED;   /* page backgrounds */
   --color-sand:         #F5EDE0;
   --color-sand-deep:    #ECD9C6;
-  --color-coral:        #C97D4E;
+
+  /* Coral — warm terracotta */
+  --color-coral:        #C4614A;
+  --color-coral-light:  #E8957E;
   --color-coral-dark:   #A8612E;
-  --color-forest:       #3D5A4C;
-  --color-forest-light: #5A7A69;
+  --color-coral-muted:  #F2DDD9;
+
+  /* Forest — authoritative green */
+  --color-forest:       #2D4A3E;
+  --color-forest-light: #4A7A68;
+  --color-forest-muted: #D4E4DF;
+
+  /* Sage — health, nutrition */
+  --color-sage:         #7A9E7A;
+  --color-sage-light:   #B5CDB5;
+  --color-sage-muted:   #E8F0E8;
+
+  /* Butter — celebration, positive */
+  --color-butter:       #E8BE4B;
+  --color-butter-light: #F5DFA0;
+  --color-butter-muted: #FBF3D8;
+
+  /* Ink scale */
   --color-ink-900:      #1C1A17;
   --color-ink-700:      #3D3529;
   --color-ink-500:      #6A5C4E;
   --color-ink-300:      #A89585;
   --color-ink-100:      #D4C4B8;
+
+  /* Semantic text tokens */
+  --color-ink:          #2C2416;   /* body text */
+  --color-muted:        #8A7E72;   /* supporting text */
+  --color-subtle:       #C4B9AE;   /* placeholders */
+
+  /* Semantic border tokens */
+  --color-border:       #E8E0D6;
+  --color-border-strong: #C4B9AE;
 
   /* Typography */
   --font-serif: var(--font-playfair), Georgia, serif;
@@ -32,34 +61,46 @@
   --color-cream:        var(--color-warm-white);
   --color-cream-soft:   var(--color-sand);
   --color-accent:       var(--color-coral);
-  --color-ink:          var(--color-ink-900);
   --color-ink-soft:     var(--color-ink-500);
-  --color-border:       var(--color-sand-deep);
-  --color-border-strong: var(--color-ink-300);
   --font-heading:       var(--font-serif);
   --font-body:          var(--font-sans);
 }
 
 /* ─── Tailwind utilities ─────────────────────────────────────────────── */
 @theme inline {
-  --color-background:   var(--color-warm-white);
-  --color-foreground:   var(--color-ink-900);
-  --color-warm-white:   var(--color-warm-white);
-  --color-sand:         var(--color-sand);
-  --color-sand-deep:    var(--color-sand-deep);
-  --color-coral:        var(--color-coral);
-  --color-coral-dark:   var(--color-coral-dark);
-  --color-forest:       var(--color-forest);
-  --color-forest-light: var(--color-forest-light);
-  --color-ink-900:      var(--color-ink-900);
-  --color-ink-700:      var(--color-ink-700);
-  --color-ink-500:      var(--color-ink-500);
-  --color-ink-300:      var(--color-ink-300);
-  --color-ink-100:      var(--color-ink-100);
-  --font-sans:          var(--font-sans);
-  --font-serif:         var(--font-serif);
-  --shadow-card:        var(--shadow-card);
-  --shadow-lift:        var(--shadow-lift);
+  --color-background:    var(--color-warm-white);
+  --color-foreground:    var(--color-ink-900);
+  --color-warm-white:    var(--color-warm-white);
+  --color-oat:           var(--color-oat);
+  --color-sand:          var(--color-sand);
+  --color-sand-deep:     var(--color-sand-deep);
+  --color-coral:         var(--color-coral);
+  --color-coral-light:   var(--color-coral-light);
+  --color-coral-dark:    var(--color-coral-dark);
+  --color-coral-muted:   var(--color-coral-muted);
+  --color-forest:        var(--color-forest);
+  --color-forest-light:  var(--color-forest-light);
+  --color-forest-muted:  var(--color-forest-muted);
+  --color-sage:          var(--color-sage);
+  --color-sage-light:    var(--color-sage-light);
+  --color-sage-muted:    var(--color-sage-muted);
+  --color-butter:        var(--color-butter);
+  --color-butter-light:  var(--color-butter-light);
+  --color-butter-muted:  var(--color-butter-muted);
+  --color-ink:           var(--color-ink);
+  --color-muted:         var(--color-muted);
+  --color-subtle:        var(--color-subtle);
+  --color-border:        var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-ink-900:       var(--color-ink-900);
+  --color-ink-700:       var(--color-ink-700);
+  --color-ink-500:       var(--color-ink-500);
+  --color-ink-300:       var(--color-ink-300);
+  --color-ink-100:       var(--color-ink-100);
+  --font-sans:           var(--font-sans);
+  --font-serif:          var(--font-serif);
+  --shadow-card:         var(--shadow-card);
+  --shadow-lift:         var(--shadow-lift);
 }
 
 /* ─── Base styles ────────────────────────────────────────────────────── */
@@ -116,5 +157,19 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--color-ink-500);
+  }
+}
+
+/* ─── Print styles ───────────────────────────────────────────────────── */
+@media print {
+  [data-expandable-content] {
+    grid-template-rows: 1fr !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+  }
+
+  [data-expandable-trigger],
+  .no-print {
+    display: none !important;
   }
 }
