@@ -264,7 +264,7 @@ function OnboardPage() {
     ingredients: true, supplements: false, equipment: false,
   });
 
-  const totalSteps = 5;
+  const totalSteps = 6;
   const noneSelected = form.healthConditions.includes("None / Healthy");
 
   // ─── Auth check + pantry pre-fill ──────────────────────────────────────────

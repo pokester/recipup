@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       ? new Date(profile.trial_ends_at as string) > now
       : false;
     const tier = profile?.subscription_tier as string | null;
-    if (!trialActive && tier !== "pack" && tier !== "pack_pro" && tier !== "founding") {
+    if (!trialActive && tier !== "pack_pro" && tier !== "founding") {
       return NextResponse.json({ message: "Health tracking requires an active trial or Pack Pro subscription" }, { status: 403 });
     }
 
