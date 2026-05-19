@@ -84,8 +84,30 @@ export default async function Home() {
   /* ── Logged-out marketing pages ────────────────────────────────── */
   return (
     <div>
+      {/* Schema.org SoftwareApplication markup */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "Recipup",
+            description:
+              "Personalised home-cooked dog food recipe generator. Build recipes based on your dog's breed, age, weight, and health conditions.",
+            applicationCategory: "HealthApplication",
+            operatingSystem: "Web",
+            offers: {
+              "@type": "Offer",
+              price: "0",
+              priceCurrency: "GBP",
+              description: "14-day free trial, no card required",
+            },
+          }),
+        }}
+      />
+
       {/* ── SECTION 1: HERO ── */}
-      <section className="bg-[var(--color-warm-white)] py-12 md:py-20">
+      <section aria-label="Hero" className="bg-[var(--color-warm-white)] py-12 md:py-20">
         <div className="mx-auto max-w-6xl px-6 md:px-10">
           <div className="grid items-center gap-10 md:grid-cols-2 md:gap-16">
             {/* Left: content */}
@@ -113,8 +135,11 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Right: recipe preview card */}
-            <div className="rounded-2xl bg-[var(--color-sand)] p-8 flex flex-col gap-5">
+            {/* Right: recipe preview card — floats gently to signal a live product */}
+            <div
+              className="rounded-2xl bg-[var(--color-sand)] p-8 flex flex-col gap-5"
+              style={{ animation: "float-card 5s ease-in-out infinite" }}
+            >
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-coral-muted)] font-heading text-sm font-semibold text-[var(--color-coral)]">R</div>
                 <div>
@@ -136,8 +161,13 @@ export default async function Home() {
                   </div>
                 ))}
               </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full bg-[var(--color-coral-muted)] px-2.5 py-1 text-xs font-medium text-[var(--color-coral)]">31g protein</span>
+                <span className="rounded-full bg-[var(--color-butter-muted)] px-2.5 py-1 text-xs font-medium text-[var(--color-coral-dark)]">18g fat</span>
+                <span className="rounded-full bg-[var(--color-forest-muted)] px-2.5 py-1 text-xs font-medium text-[var(--color-forest)]">Batch 7 days</span>
+              </div>
               <div className="rounded-xl bg-[var(--color-forest-muted)] px-4 py-3">
-                <p className="text-xs text-[var(--color-forest)]">FEDIAF compliant · 1,248 kcal target met</p>
+                <p className="text-xs font-medium text-[var(--color-forest)]">FEDIAF compliant · 1,248 kcal target met</p>
               </div>
             </div>
           </div>
@@ -145,7 +175,7 @@ export default async function Home() {
       </section>
 
       {/* ── SECTION 2: TRUST STRIP ── */}
-      <section className="bg-[var(--color-forest)] py-4">
+      <section aria-label="Credentials" className="bg-[var(--color-forest)] py-4">
         <div className="mx-auto max-w-6xl px-6 md:px-10">
           <div className="grid grid-cols-2 gap-2 text-center text-sm font-medium text-[var(--color-warm-white)] md:flex md:items-center md:justify-center md:gap-8">
             {[
@@ -161,7 +191,7 @@ export default async function Home() {
       </section>
 
       {/* ── SECTION 3: HOW IT WORKS ── */}
-      <section id="how-it-works" className="bg-[var(--color-warm-white)] py-12 md:py-20">
+      <section id="how-it-works" aria-label="How it works" className="bg-[var(--color-warm-white)] py-12 md:py-20">
         <div className="mx-auto max-w-6xl px-6 md:px-10">
           <div className="text-center">
             <p className="eyebrow">How it works</p>
@@ -170,41 +200,78 @@ export default async function Home() {
             </h2>
           </div>
           <div className="mt-12 grid gap-10 md:grid-cols-3">
-            {[
-              {
-                bg: "bg-[var(--color-sand)]",
-                step: "Step 1",
-                title: "Tell us about your dog",
-                body: "Breed, age, weight, health conditions — the more we know, the better the recipes. Takes about two minutes.",
-              },
-              {
-                bg: "bg-[var(--color-sand-deep)]",
-                step: "Step 2",
-                title: "We do the hard thinking",
-                body: "Breed nutrition, calorie calculations, health condition rules, FEDIAF standards — all handled. You don't need a veterinary nutritionist.",
-              },
-              {
-                bg: "bg-[var(--color-forest-muted)]",
-                step: "Step 3",
-                title: "You cook it. They love it.",
-                body: "One-pot recipes, exact gram amounts, batch cooking built in. One cook session feeds them for days.",
-              },
-            ].map(({ bg, step, title, body }) => (
-              <article key={step} className="flex flex-col gap-4">
-                <div className={`aspect-square w-full rounded-2xl ${bg} flex items-center justify-center`}>
-                  <span className="font-heading text-8xl leading-none text-[var(--color-ink-100)]">{step.slice(-1)}</span>
+
+            {/* Step 1 */}
+            <article className="flex flex-col gap-4">
+              <div className="rounded-2xl bg-[var(--color-sand)] p-6 flex flex-col gap-3">
+                <span className="font-heading text-5xl font-semibold leading-none text-[var(--color-ink-100)]">1</span>
+                <div className="mt-2 flex flex-col gap-2">
+                  {([["Breed", "Golden Retriever"], ["Weight", "28 kg"], ["Life stage", "Adult"]] as const).map(([label, value]) => (
+                    <div key={label} className="flex items-center justify-between rounded-lg bg-[var(--color-warm-white)] px-3 py-2">
+                      <span className="text-xs text-[var(--color-ink-300)]">{label}</span>
+                      <span className="text-xs font-medium text-[var(--color-ink-500)]">{value}</span>
+                    </div>
+                  ))}
                 </div>
-                <p className="eyebrow">{step}</p>
-                <h3 className="font-heading text-2xl text-[var(--color-ink)]">{title}</h3>
-                <p className="text-[var(--color-ink-soft)]">{body}</p>
-              </article>
-            ))}
+              </div>
+              <p className="eyebrow">Step 1</p>
+              <h3 className="font-heading text-2xl text-[var(--color-ink)]">Tell us about your dog</h3>
+              <p className="text-[var(--color-ink-soft)]">Breed, age, weight, health conditions — the more we know, the better the recipes. Takes about two minutes.</p>
+            </article>
+
+            {/* Step 2 */}
+            <article className="flex flex-col gap-4">
+              <div className="rounded-2xl bg-[var(--color-sand-deep)] p-6 flex flex-col gap-3">
+                <span className="font-heading text-5xl font-semibold leading-none text-[var(--color-ink-100)]">2</span>
+                <div className="mt-2 flex flex-col gap-3">
+                  {([
+                    { label: "Protein", pct: 62, color: "bg-[var(--color-coral)]" },
+                    { label: "Fat", pct: 27, color: "bg-[var(--color-butter)]" },
+                    { label: "Fibre", pct: 11, color: "bg-[var(--color-sage)]" },
+                  ]).map(({ label, pct, color }) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <span className="w-14 shrink-0 text-xs text-[var(--color-ink-300)]">{label}</span>
+                      <div className="flex-1 overflow-hidden rounded-full bg-[var(--color-warm-white)] h-2">
+                        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="w-8 text-right text-xs font-medium text-[var(--color-ink-500)]">{pct}%</span>
+                    </div>
+                  ))}
+                  <p className="text-xs text-[var(--color-forest-light)]">FEDIAF targets met</p>
+                </div>
+              </div>
+              <p className="eyebrow">Step 2</p>
+              <h3 className="font-heading text-2xl text-[var(--color-ink)]">We do the hard thinking</h3>
+              <p className="text-[var(--color-ink-soft)]">Breed nutrition, calorie calculations, health condition rules, FEDIAF standards — all handled. You don&apos;t need a veterinary nutritionist.</p>
+            </article>
+
+            {/* Step 3 */}
+            <article className="flex flex-col gap-4">
+              <div className="rounded-2xl bg-[var(--color-forest-muted)] p-6 flex flex-col gap-3">
+                <span className="font-heading text-5xl font-semibold leading-none text-[var(--color-ink-100)]">3</span>
+                <div className="mt-2 flex flex-col gap-2.5">
+                  {["Chicken breast — 312 g", "Sweet potato — 180 g", "Broccoli — 95 g"].map((ingredient) => (
+                    <div key={ingredient} className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-forest-light)]" aria-hidden="true" />
+                      <span className="text-xs text-[var(--color-ink-500)]">{ingredient}</span>
+                    </div>
+                  ))}
+                  <div className="mt-1 rounded-lg bg-[var(--color-forest)] px-3 py-2">
+                    <p className="text-xs font-medium text-[var(--color-warm-white)]">One pot · 45 min · Feeds 7 days</p>
+                  </div>
+                </div>
+              </div>
+              <p className="eyebrow">Step 3</p>
+              <h3 className="font-heading text-2xl text-[var(--color-ink)]">You cook it. They love it.</h3>
+              <p className="text-[var(--color-ink-soft)]">One-pot recipes, exact gram amounts, batch cooking built in. One cook session feeds them for days.</p>
+            </article>
+
           </div>
         </div>
       </section>
 
       {/* ── SECTION 4: THREE PILLARS ── */}
-      <section className="bg-[var(--color-forest)] py-12 md:py-20">
+      <section aria-label="Why Recipup" className="bg-[var(--color-forest)] py-12 md:py-20">
         <div className="mx-auto max-w-6xl px-6 md:px-10">
           <div className="text-center">
             <p className="eyebrow" style={{ color: "var(--color-forest-light)" }}>Why Recipup</p>
@@ -237,7 +304,7 @@ export default async function Home() {
       </section>
 
       {/* ── SECTION 5: COST COMPARISON ── */}
-      <section className="bg-[var(--color-warm-white)] py-12 md:py-20">
+      <section aria-label="Pricing comparison" className="bg-[var(--color-warm-white)] py-12 md:py-20">
         <div className="mx-auto max-w-6xl px-6 md:px-10">
           <div className="text-center">
             <p className="eyebrow">The honest numbers</p>
@@ -272,7 +339,7 @@ export default async function Home() {
       </section>
 
       {/* ── SECTION 6: FOUNDING CTA ── */}
-      <section className="bg-[var(--color-sand)] py-12 md:py-20">
+      <section aria-label="Join Recipup" className="bg-[var(--color-sand)] py-12 md:py-20">
         <div className="mx-auto max-w-2xl px-6 md:px-10">
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-warm-white)] p-8 text-center md:p-12">
             <p className="eyebrow">Founding 500</p>
@@ -296,7 +363,7 @@ export default async function Home() {
       </section>
 
       {/* ── SECTION 7: TRUST SIGNALS ── */}
-      <section className="bg-[var(--color-sand)] pb-12 md:pb-16">
+      <section aria-label="Features" className="bg-[var(--color-sand)] pb-12 md:pb-16">
         <div className="mx-auto max-w-6xl px-6 md:px-10">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             {[

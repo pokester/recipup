@@ -18,8 +18,25 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Recipup",
-  description: "Personalised dog food recipe generator",
+  title: {
+    default: "Recipup — Personalised Home-Cooked Dog Food Recipes",
+    template: "%s | Recipup",
+  },
+  description:
+    "Build personalised recipes for your dog based on breed, age, weight, and health conditions. You cook with real ingredients. We handle the nutrition science.",
+  openGraph: {
+    title: "Recipup — Personalised Home-Cooked Dog Food Recipes",
+    description:
+      "Build personalised recipes for your dog based on breed, age, weight, and health conditions. You cook with real ingredients. We handle the nutrition science.",
+    type: "website",
+    siteName: "Recipup",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Recipup — Personalised Home-Cooked Dog Food Recipes",
+    description:
+      "Build personalised recipes for your dog based on breed, age, weight, and health conditions. You cook with real ingredients. We handle the nutrition science.",
+  },
 };
 
 export default function RootLayout({
@@ -29,6 +46,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${playfair.variable} ${dmSans.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
     >
       <body className="min-h-full">
         <SiteLayout>{children}</SiteLayout>

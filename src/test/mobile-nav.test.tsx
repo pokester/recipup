@@ -24,7 +24,7 @@ const mockUser = {
   id: "user-1",
   email: "test@example.com",
   user_metadata: { full_name: "Test User" },
-} as Parameters<typeof MobileNav>[0]["user"];
+} as unknown as Parameters<typeof MobileNav>[0]["user"];
 
 const mockDogs = [
   { id: "dog-1", name: "bella", breed: "Labrador" },

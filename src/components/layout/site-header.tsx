@@ -51,19 +51,19 @@ export async function SiteHeader() {
               <DogsDropdown dogs={dogs} />
               <Link
                 href="/pantry"
-                className="text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
+                className="py-2 text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
               >
                 Kitchen
               </Link>
               <Link
                 href="/planner"
-                className="text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
+                className="py-2 text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
               >
                 Planner
               </Link>
               <Link
                 href="/library"
-                className="text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
+                className="py-2 text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
               >
                 Library
               </Link>
@@ -78,25 +78,25 @@ export async function SiteHeader() {
             <div className="hidden items-center gap-7 md:flex">
               <Link
                 href="/#how-it-works"
-                className="text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
+                className="py-2 text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
               >
                 How it works
               </Link>
               <Link
                 href="/recipes"
-                className="text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
+                className="py-2 text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
               >
                 Recipes
               </Link>
               <Link
                 href="/about"
-                className="text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
+                className="py-2 text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
               >
                 About
               </Link>
               <Link
                 href="/pricing"
-                className="text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
+                className="py-2 text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
               >
                 Pricing
               </Link>
@@ -104,13 +104,13 @@ export async function SiteHeader() {
             <div className="hidden items-center gap-3 md:flex">
               <Link
                 href="/login"
-                className="text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
+                className="py-2 text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
               >
                 Sign in
               </Link>
               <Link
                 href="/signup"
-                className="rounded-full bg-[var(--color-coral)] px-5 py-2 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
+                className="rounded-full bg-[var(--color-coral)] px-5 py-2.5 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5"
               >
                 Get started →
               </Link>
