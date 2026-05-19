@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
@@ -23,20 +24,28 @@ function initials(name: string) {
 
 export function MobileNav({ user, dogs }: { user: User | null; dogs: Dog[] }) {
   const [open, setOpen] = useState(false);
+  const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const drawerRef = useRef<HTMLDivElement>(null);
 
+  // Create a dedicated portal container. Removal is deferred so React can finish
+  // removing portal children before we pull the container out of the DOM.
+  useEffect(() => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    setPortalEl(el);
+    return () => {
+      setTimeout(() => {
+        if (el.isConnected) el.remove();
+      }, 0);
+    };
+  }, []);
+
   // Lock body scroll while open
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
   // Close on Escape
@@ -71,40 +80,21 @@ export function MobileNav({ user, dogs }: { user: User | null; dogs: Dog[] }) {
         : "text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
     }`;
 
-  return (
+  const overlay = (
     <>
-      {/* Hamburger button */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-ink-500)] transition-colors hover:text-[var(--color-ink)] md:hidden"
-        aria-label={open ? "Close menu" : "Open menu"}
-        aria-expanded={open}
-      >
-        {open ? (
-          <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-            <path strokeLinecap="round" d="M4 4l12 12M16 4L4 16" />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-            <path strokeLinecap="round" d="M3 5h14M3 10h14M3 15h14" />
-          </svg>
-        )}
-      </button>
-
       {/* Backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 z-30 bg-[var(--color-ink)]/40 md:hidden"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={`fixed inset-0 z-40 bg-[var(--color-ink)]/40 transition-opacity duration-300 ${
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        onClick={() => setOpen(false)}
+        aria-hidden="true"
+      />
 
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className={`fixed inset-y-0 right-0 z-40 w-72 bg-[var(--color-warm-white)] shadow-[var(--shadow-lift)] transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed inset-y-0 right-0 z-50 w-72 bg-[var(--color-warm-white)] shadow-[var(--shadow-lift)] transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
@@ -201,6 +191,31 @@ export function MobileNav({ user, dogs }: { user: User | null; dogs: Dog[] }) {
           </nav>
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Hamburger button — stays inside the header */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-ink-500)] transition-colors hover:text-[var(--color-ink)] md:hidden"
+        aria-label={open ? "Close menu" : "Open menu"}
+        aria-expanded={open}
+      >
+        {open ? (
+          <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" d="M4 4l12 12M16 4L4 16" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" d="M3 5h14M3 10h14M3 15h14" />
+          </svg>
+        )}
+      </button>
+
+      {portalEl && createPortal(overlay, portalEl)}
     </>
   );
 }

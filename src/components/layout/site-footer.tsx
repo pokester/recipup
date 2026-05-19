@@ -16,7 +16,7 @@ export function SiteFooter() {
 
           {/* Product */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warm-white)]/40">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warm-white)]/60">
               Product
             </p>
             <ul className="mt-4 space-y-2">
@@ -41,7 +41,7 @@ export function SiteFooter() {
 
           {/* Company */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warm-white)]/40">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warm-white)]/60">
               Company
             </p>
             <ul className="mt-4 space-y-2">
@@ -63,7 +63,7 @@ export function SiteFooter() {
 
           {/* Legal */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warm-white)]/40">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warm-white)]/60">
               Legal
             </p>
             <ul className="mt-4 space-y-2">
@@ -81,17 +81,17 @@ export function SiteFooter() {
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-xs text-[var(--color-warm-white)]/40">
+            <p className="mt-4 text-xs text-[var(--color-warm-white)]/60">
               Shopping links may earn us a small commission at no cost to you.
             </p>
           </div>
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-2 border-t border-[var(--color-warm-white)]/10 pt-8 sm:flex-row">
-          <p className="text-xs text-[var(--color-warm-white)]/40">
+          <p className="text-xs text-[var(--color-warm-white)]/60">
             © 2026 Recipup. All rights reserved.
           </p>
-          <p className="text-xs text-[var(--color-warm-white)]/40">
+          <p className="text-xs text-[var(--color-warm-white)]/60">
             Personalised nutrition for every dog.
           </p>
         </div>

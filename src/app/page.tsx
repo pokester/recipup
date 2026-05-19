@@ -144,7 +144,7 @@ export default async function Home() {
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-coral-muted)] font-heading text-sm font-semibold text-[var(--color-coral)]">R</div>
                 <div>
                   <p className="text-sm font-semibold text-[var(--color-ink)]">Rory&apos;s Wednesday recipe</p>
-                  <p className="text-xs text-[var(--color-ink-300)]">Golden retriever · 28kg · Adult</p>
+                  <p className="text-xs text-[var(--color-ink-500)]">Golden retriever · 28kg · Adult</p>
                 </div>
               </div>
               <div className="flex flex-col gap-2.5">
@@ -162,8 +162,8 @@ export default async function Home() {
                 ))}
               </div>
               <div className="flex flex-wrap gap-2">
-                <span className="rounded-full bg-[var(--color-coral-muted)] px-2.5 py-1 text-xs font-medium text-[var(--color-coral)]">31g protein</span>
-                <span className="rounded-full bg-[var(--color-butter-muted)] px-2.5 py-1 text-xs font-medium text-[var(--color-coral-dark)]">18g fat</span>
+                <span className="rounded-full bg-[var(--color-coral-muted)] px-2.5 py-1 text-xs font-medium text-[var(--color-ink-700)]">31g protein</span>
+                <span className="rounded-full bg-[var(--color-butter-muted)] px-2.5 py-1 text-xs font-medium text-[var(--color-ink-700)]">18g fat</span>
                 <span className="rounded-full bg-[var(--color-forest-muted)] px-2.5 py-1 text-xs font-medium text-[var(--color-forest)]">Batch 7 days</span>
               </div>
               <div className="rounded-xl bg-[var(--color-forest-muted)] px-4 py-3">
@@ -208,7 +208,7 @@ export default async function Home() {
                 <div className="mt-2 flex flex-col gap-2">
                   {([["Breed", "Golden Retriever"], ["Weight", "28 kg"], ["Life stage", "Adult"]] as const).map(([label, value]) => (
                     <div key={label} className="flex items-center justify-between rounded-lg bg-[var(--color-warm-white)] px-3 py-2">
-                      <span className="text-xs text-[var(--color-ink-300)]">{label}</span>
+                      <span className="text-xs text-[var(--color-ink-500)]">{label}</span>
                       <span className="text-xs font-medium text-[var(--color-ink-500)]">{value}</span>
                     </div>
                   ))}
@@ -230,14 +230,14 @@ export default async function Home() {
                     { label: "Fibre", pct: 11, color: "bg-[var(--color-sage)]" },
                   ]).map(({ label, pct, color }) => (
                     <div key={label} className="flex items-center gap-2">
-                      <span className="w-14 shrink-0 text-xs text-[var(--color-ink-300)]">{label}</span>
+                      <span className="w-14 shrink-0 text-xs text-[var(--color-ink-500)]">{label}</span>
                       <div className="flex-1 overflow-hidden rounded-full bg-[var(--color-warm-white)] h-2">
                         <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
                       </div>
                       <span className="w-8 text-right text-xs font-medium text-[var(--color-ink-500)]">{pct}%</span>
                     </div>
                   ))}
-                  <p className="text-xs text-[var(--color-forest-light)]">FEDIAF targets met</p>
+                  <p className="text-xs text-[var(--color-forest)]">FEDIAF targets met</p>
                 </div>
               </div>
               <p className="eyebrow">Step 2</p>
@@ -274,7 +274,7 @@ export default async function Home() {
       <section aria-label="Why Recipup" className="bg-[var(--color-forest)] py-12 md:py-20">
         <div className="mx-auto max-w-6xl px-6 md:px-10">
           <div className="text-center">
-            <p className="eyebrow" style={{ color: "var(--color-forest-light)" }}>Why Recipup</p>
+            <p className="eyebrow text-[var(--color-forest-muted)]">Why Recipup</p>
             <h2 className="mt-3 font-heading text-4xl text-[var(--color-warm-white)]">
               What makes home cooking different.
             </h2>
@@ -296,7 +296,7 @@ export default async function Home() {
             ].map(({ title, body }) => (
               <div key={title} className="rounded-2xl bg-[var(--color-forest-light)] p-8">
                 <h3 className="font-heading text-xl text-[var(--color-warm-white)]">{title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-[var(--color-warm-white)]/80">{body}</p>
+                <p className="mt-3 text-sm leading-relaxed text-white">{body}</p>
               </div>
             ))}
           </div>
@@ -327,12 +327,12 @@ export default async function Home() {
               <p className="mt-1 text-sm text-[var(--color-ink-soft)]">for a 28kg dog</p>
             </div>
             <div className="rounded-2xl bg-[var(--color-coral)] p-6">
-              <p className="text-sm font-semibold text-[var(--color-warm-white)]/80"><span aria-hidden="true">🐾</span> Recipup home cooking</p>
+              <p className="text-sm font-semibold text-[var(--color-warm-white)]"><span aria-hidden="true">🐾</span> Recipup home cooking</p>
               <p className="mt-2 font-heading text-3xl text-[var(--color-warm-white)]">~£32–45/month</p>
-              <p className="mt-1 text-sm text-[var(--color-warm-white)]/90">Same ingredients. You do the (easy) cooking.</p>
+              <p className="mt-1 text-sm text-[var(--color-warm-white)]">Same ingredients. You do the (easy) cooking.</p>
             </div>
           </div>
-          <p className="mt-4 text-center text-xs text-[var(--color-ink-300)]">
+          <p className="mt-4 text-center text-xs text-[var(--color-ink-500)]">
             Estimates based on publicly listed pricing for a 28kg dog. Actual costs vary by dog size, breed, and ingredients chosen.
           </p>
         </div>
@@ -355,7 +355,7 @@ export default async function Home() {
                 Claim your founding spot →
               </Link>
             </div>
-            <p className="mt-3 text-xs text-[var(--color-ink-300)]">
+            <p className="mt-3 text-xs text-[var(--color-ink-500)]">
               14-day free trial · No card required.
             </p>
           </div>

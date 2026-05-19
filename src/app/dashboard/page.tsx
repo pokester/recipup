@@ -207,8 +207,8 @@ export default async function DashboardPage() {
         <p className="mt-2 text-[var(--color-ink-soft)]">
           {typedDogs.length > 0
             ? typedDogs.length === 1
-              ? `Here&apos;s what&apos;s happening with ${toTitleCase(typedDogs[0].name)}.`
-              : `Here&apos;s what&apos;s happening with your ${typedDogs.length} dogs.`
+              ? `Here's what's happening with ${toTitleCase(typedDogs[0].name)}.`
+              : `Here's what's happening with your ${typedDogs.length} dogs.`
             : "Add your first dog to start building personalised recipe plans."}
         </p>
       </div>
@@ -224,13 +224,13 @@ export default async function DashboardPage() {
             return (
               <div
                 key={dog.id}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-5 py-4 shadow-[var(--shadow-card)]"
+                className="flex flex-col gap-3 rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-5 py-4 shadow-[var(--shadow-card)] sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex min-w-0 items-center gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-coral)]/10 font-heading text-lg font-semibold text-[var(--color-coral)]">
                     {dogInitials(dog.name)}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-heading text-lg text-[var(--color-ink)]">{toTitleCase(dog.name)}</p>
                     {dog.breed && (
                       <p className="text-sm capitalize text-[var(--color-ink-500)]">{dog.breed.replace(/_/g, " ")}</p>
@@ -303,7 +303,7 @@ export default async function DashboardPage() {
           <p className="eyebrow mb-2">On the menu today</p>
           <div className="flex flex-wrap gap-3">
             {todayDays.map((day) => {
-              const recipeName = day.recipe_data?.recipe?.name ?? day.recipe_data?.day_name ?? "Today&apos;s recipe";
+              const recipeName = day.recipe_data?.recipe?.name ?? day.recipe_data?.day_name ?? "Today's recipe";
               return (
                 <div key={day.id} className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
                   <span className="text-[var(--color-coral)]">🍲</span>
