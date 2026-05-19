@@ -34,6 +34,7 @@ export function MobileNav({ user, dogs }: { user: User | null; dogs: Dog[] }) {
   useEffect(() => {
     const el = document.createElement("div");
     document.body.appendChild(el);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPortalEl(el);
     return () => {
       setTimeout(() => {
@@ -59,6 +60,7 @@ export function MobileNav({ user, dogs }: { user: User | null; dogs: Dog[] }) {
 
   // Close on route change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(false);
   }, [pathname]);
 

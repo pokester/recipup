@@ -44,6 +44,21 @@ export async function POST(req: Request) {
       .single();
     if (!dog) return NextResponse.json({ message: "Dog not found" }, { status: 404 });
 
+    // Entitlement check — health tracking is a Pack Pro / trial feature
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_tier, trial_ends_at")
+      .eq("id", user.id)
+      .single();
+    const now = new Date();
+    const trialActive = profile?.trial_ends_at
+      ? new Date(profile.trial_ends_at as string) > now
+      : false;
+    const tier = profile?.subscription_tier as string | null;
+    if (!trialActive && tier !== "pack" && tier !== "pack_pro" && tier !== "founding") {
+      return NextResponse.json({ message: "Health tracking requires an active trial or Pack Pro subscription" }, { status: 403 });
+    }
+
     const week_start = suppliedWeekStart ?? getWeekStart();
 
     // Fetch last 4 weeks of logs for analysis

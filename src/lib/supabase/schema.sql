@@ -110,14 +110,15 @@ CREATE TABLE IF NOT EXISTS public.health_logs (
   user_id           uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   dog_id            uuid NOT NULL REFERENCES public.dogs(id) ON DELETE CASCADE,
   week_start        date NOT NULL,
+  logged_at         timestamptz DEFAULT now(),
   weight_kg         numeric,
-  energy_level      text,
-  coat_score        numeric,
-  appetite          text,
-  itching           numeric,
-  joint_stiffness   numeric,
-  digestion         text,
-  vomiting          text,
+  energy_level      text CHECK (energy_level IN ('low','normal','high')),
+  coat_score        int  CHECK (coat_score BETWEEN 1 AND 5),
+  appetite          text CHECK (appetite IN ('refusing','reduced','normal','enthusiastic')),
+  itching           text CHECK (itching IN ('none','occasional','frequent')),
+  joint_stiffness   text CHECK (joint_stiffness IN ('none','mild','noticeable')),
+  digestion         text CHECK (digestion IN ('great','variable','unsettled')),
+  vomiting          text CHECK (vomiting IN ('none','once','more_than_once')),
   notes             text,
   recipe_adjustments jsonb NOT NULL DEFAULT '[]',
   response_message  text,
@@ -436,53 +437,6 @@ CREATE TABLE IF NOT EXISTS public.recipe_costs (
   UNIQUE(recipe_hash, market)
 );
 
--- ============================================================
--- HEALTH HISTORY
--- ============================================================
-
-CREATE TABLE IF NOT EXISTS public.health_logs (
-  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id          uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  dog_id           uuid NOT NULL REFERENCES public.dogs(id) ON DELETE CASCADE,
-  week_start       date NOT NULL,
-  logged_at        timestamptz DEFAULT now(),
-
-  -- Core metrics (always collected)
-  weight_kg        numeric,
-  energy_level     text CHECK (energy_level IN ('low','normal','high')),
-  coat_score       int CHECK (coat_score BETWEEN 1 AND 5),
-  appetite         text CHECK (appetite IN ('refusing','reduced','normal','enthusiastic')),
-
-  -- Optional metrics (user expands)
-  itching          text CHECK (itching IN ('none','occasional','frequent')),
-  joint_stiffness  text CHECK (joint_stiffness IN ('none','mild','noticeable')),
-  digestion        text CHECK (digestion IN ('great','variable','unsettled')),
-  vomiting         text CHECK (vomiting IN ('none','once','more_than_once')),
-
-  -- Free text
-  notes            text,
-
-  -- Analysis results
-  recipe_adjustments jsonb DEFAULT '[]',
-  response_message   text,
-  vet_flag           boolean DEFAULT false,
-  vet_message        text,
-
-  UNIQUE (dog_id, week_start)
-);
-
-ALTER TABLE public.health_logs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users manage own health logs"
-  ON public.health_logs FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE INDEX IF NOT EXISTS health_logs_dog_id_idx
-  ON public.health_logs(dog_id);
-
-CREATE INDEX IF NOT EXISTS health_logs_user_dog_idx
-  ON public.health_logs(user_id, dog_id, week_start DESC);
 
 -- ============================================================
 -- RLS FOR COST TABLES

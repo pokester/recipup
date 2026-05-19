@@ -62,6 +62,7 @@ export default function SignupPage() {
   const [isFounding, setIsFounding] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsFounding(new URLSearchParams(window.location.search).get("plan") === "founding");
   }, []);
 

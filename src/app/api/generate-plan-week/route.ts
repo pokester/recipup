@@ -265,9 +265,11 @@ export async function POST(req: Request) {
       ? new Date(profile.trial_ends_at as string) > now
       : false;
     const tier = profile?.subscription_tier as string | null;
-    const model = (trialActive || tier === "pack" || tier === "pack_pro" || tier === "founding")
-      ? "claude-sonnet-4-20250514"
-      : "claude-haiku-4-5-20251001";
+    const isPaidOrTrial = trialActive || tier === "pack" || tier === "pack_pro" || tier === "founding";
+    if (!isPaidOrTrial) {
+      return NextResponse.json({ message: "Planner access requires an active trial or subscription" }, { status: 403 });
+    }
+    const model = isPaidOrTrial ? "claude-sonnet-4-20250514" : "claude-haiku-4-5-20251001";
 
     // Inject health context if available
     if (!body.health_context) {

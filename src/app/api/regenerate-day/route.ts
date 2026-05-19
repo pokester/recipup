@@ -71,9 +71,11 @@ export async function POST(req: Request) {
       ? new Date(profile.trial_ends_at as string) > now
       : false;
     const tier = profile?.subscription_tier as string | null;
-    const model = (trialActive || tier === "pack" || tier === "pack_pro" || tier === "founding")
-      ? "claude-sonnet-4-20250514"
-      : "claude-haiku-4-5-20251001";
+    const isPaidOrTrial = trialActive || tier === "pack" || tier === "pack_pro" || tier === "founding";
+    if (!isPaidOrTrial) {
+      return Response.json({ error: "Planner access requires an active trial or subscription" }, { status: 403 });
+    }
+    const model = "claude-sonnet-4-20250514";
 
     // Hourly rate limit
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -252,6 +254,15 @@ Return this exact structure:
     if (!jsonText) throw new APIError("anthropic_error", 502, "Claude did not return JSON");
 
     const parsed = JSON.parse(jsonText) as RegenerateResponse;
+
+    // Record this call so the hourly rate limit counter actually advances
+    await supabase.from("recipe_generations").insert({
+      user_id: user.id,
+      dog_id: (body.dog_profile as Record<string, unknown>)?.id as string ?? null,
+      profile_snapshot: body.dog_profile ?? {},
+      recipes_generated: 3,
+    });
+
     return NextResponse.json(parsed);
   } catch (err) {
     return handleAPIError(err);

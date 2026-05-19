@@ -154,6 +154,7 @@ export function DogHubClient({
     if (savedRecipes.length === 0) return;
     try {
       const dismissed = localStorage.getItem(`recipup_hub_strip_${dog.id}`);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (!dismissed) setShowActivationStrip(true);
     } catch { /* ignore */ }
   }, [dog.id, savedRecipes.length]);
