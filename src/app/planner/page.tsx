@@ -21,9 +21,9 @@ function formatDateRange(start: string, end: string): string {
 }
 
 function cookingLabel(freq: string): string {
-  if (freq === "daily") return "🍳 Fresh daily";
-  if (freq === "twice_weekly") return "🥘 Batch 3–4 days";
-  return "🫙 Weekly batch";
+  if (freq === "daily") return "Fresh daily";
+  if (freq === "twice_weekly") return "Batch 3–4 days";
+  return "Weekly batch";
 }
 
 export default async function PlannerPage() {
@@ -57,7 +57,7 @@ export default async function PlannerPage() {
   if (!hasPlannerAccess) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-20 text-center">
-        <p className="text-5xl">🐾</p>
+        <p className="text-5xl" aria-hidden="true">🐾</p>
         <h1 className="mt-6 font-heading text-3xl text-[var(--color-ink)]">
           Meal planning is a Pack feature.
         </h1>

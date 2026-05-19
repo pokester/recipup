@@ -51,7 +51,9 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
           className="text-xs text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
           aria-label="Dismiss"
         >
-          ✕
+          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" d="M3 3l10 10M13 3L3 13" />
+          </svg>
         </button>
       </div>
     </div>

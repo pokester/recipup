@@ -260,7 +260,7 @@ export default async function Home() {
               <p className="mt-1 text-sm text-[var(--color-ink-soft)]">for a 28kg dog</p>
             </div>
             <div className="rounded-2xl bg-[var(--color-coral)] p-6">
-              <p className="text-sm font-semibold text-[var(--color-warm-white)]/80">🐾 Recipup home cooking</p>
+              <p className="text-sm font-semibold text-[var(--color-warm-white)]/80"><span aria-hidden="true">🐾</span> Recipup home cooking</p>
               <p className="mt-2 font-heading text-3xl text-[var(--color-warm-white)]">~£32–45/month</p>
               <p className="mt-1 text-sm text-[var(--color-warm-white)]/90">Same ingredients. You do the (easy) cooking.</p>
             </div>
@@ -308,7 +308,7 @@ export default async function Home() {
               "Track progress over time",
             ].map((item) => (
               <div key={item} className="flex items-center gap-2 text-sm text-[var(--color-ink-soft)]">
-                <span className="text-[var(--color-coral)]">✓</span>
+                <span className="text-[var(--color-coral)]" aria-hidden="true">✓</span>
                 {item}
               </div>
             ))}

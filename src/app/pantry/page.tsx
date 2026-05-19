@@ -308,7 +308,7 @@ export default function PantryPage() {
             <span className="text-xs text-[var(--color-ink-300)]">Saving...</span>
           )}
           {saveState === "saved" && (
-            <span className="text-xs font-semibold text-[var(--color-forest)]">Saved ✓</span>
+            <span className="text-xs font-semibold text-[var(--color-forest)]">Saved <span aria-hidden="true">✓</span></span>
           )}
           <Link
             href="/dashboard"
@@ -321,7 +321,7 @@ export default function PantryPage() {
 
       <div className="space-y-4 pb-16">
         <CollapsibleSection
-          title="Ingredients you have 🥩"
+          title="Ingredients you have"
           count={ingredientRows.filter((r) => r.isAvailable).length + customIngredients.filter((r) => r.isAvailable).length}
           open={openSections.ingredients}
           onToggle={() => toggleSection("ingredients")}
@@ -353,7 +353,7 @@ export default function PantryPage() {
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="Supplements 💊"
+          title="Supplements"
           count={supplementRows.filter((r) => r.isAvailable).length + customSupplements.filter((r) => r.isAvailable).length}
           open={openSections.supplements}
           onToggle={() => toggleSection("supplements")}
@@ -385,7 +385,7 @@ export default function PantryPage() {
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="Kitchen equipment 🍲"
+          title="Kitchen equipment"
           count={equipmentRows.filter((r) => r.isAvailable).length}
           open={openSections.equipment}
           onToggle={() => toggleSection("equipment")}

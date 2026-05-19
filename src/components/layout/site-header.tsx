@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { UserMenu } from "@/components/layout/user-menu";
 import { DogsDropdown } from "@/components/layout/dogs-dropdown";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { createClient } from "@/lib/supabase/server";
 import { withTimeout } from "@/lib/async";
 
@@ -45,7 +46,7 @@ export async function SiteHeader() {
         </Link>
 
         {user ? (
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 md:gap-6">
             <div className="hidden items-center gap-7 md:flex">
               <DogsDropdown dogs={dogs} />
               <Link
@@ -67,10 +68,13 @@ export async function SiteHeader() {
                 Library
               </Link>
             </div>
-            <UserMenu user={user} />
+            <div className="hidden md:block">
+              <UserMenu user={user} />
+            </div>
+            <MobileNav user={user} dogs={dogs} />
           </div>
         ) : (
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 md:gap-6">
             <div className="hidden items-center gap-7 md:flex">
               <Link
                 href="/#how-it-works"
@@ -97,7 +101,7 @@ export async function SiteHeader() {
                 Pricing
               </Link>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-3 md:flex">
               <Link
                 href="/login"
                 className="text-sm font-medium text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-ink)]"
@@ -111,6 +115,7 @@ export async function SiteHeader() {
                 Get started →
               </Link>
             </div>
+            <MobileNav user={null} dogs={[]} />
           </div>
         )}
       </nav>
