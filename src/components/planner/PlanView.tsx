@@ -703,7 +703,7 @@ export function PlanView({ planId }: { planId: string }) {
                 type="button"
                 onClick={() => void handleDeletePlan()}
                 disabled={deleting}
-                className="flex-1 rounded-full bg-red-600 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="flex-1 rounded-full border border-[var(--color-sand-deep)] py-2 text-sm font-semibold text-[var(--color-ink-500)] transition-colors hover:border-[var(--color-ink-300)] hover:text-[var(--color-ink)] disabled:opacity-40"
               >
                 {deleting ? "Deleting…" : "Delete plan"}
               </button>

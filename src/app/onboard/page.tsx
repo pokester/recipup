@@ -234,6 +234,7 @@ function OnboardPage() {
   const [pendingPayload, setPendingPayload] = useState<Record<string, unknown> | null>(null);
   const [isRegenMode, setIsRegenMode] = useState(false);
   const [isKitchenOnlyMode, setIsKitchenOnlyMode] = useState(false);
+  const [regenNotes, setRegenNotes] = useState("");
 
   // Dog profile form
   const [form, setForm] = useState<FormState>({
@@ -263,7 +264,7 @@ function OnboardPage() {
     ingredients: true, supplements: false, equipment: false,
   });
 
-  const totalSteps = isEditMode ? 5 : (isLoggedIn ? 6 : 5);
+  const totalSteps = 5;
   const noneSelected = form.healthConditions.includes("None / Healthy");
 
   // ─── Auth check + pantry pre-fill ──────────────────────────────────────────
@@ -439,7 +440,7 @@ function OnboardPage() {
     if (step === 2) return form.healthConditions.length > 0 && form.activityLevel.length > 0;
     if (step === 3) return true;
     if (step === 4) return form.goal.length > 0;
-    if (step === 5) return isLoggedIn; // logged-in users can proceed to step 6
+    if (step === 5) return true;
     return false;
   }, [form, step, isLoggedIn]);
 
@@ -518,6 +519,7 @@ function OnboardPage() {
   const proceedWithGeneration = (payload: Record<string, unknown>) => {
     try {
       window.localStorage.setItem("recipup_dog_profile", JSON.stringify(payload));
+      if (dogId) window.localStorage.setItem("recipup_current_dog_id", dogId);
     } catch {
       // ignore
     }
@@ -593,10 +595,13 @@ function OnboardPage() {
     proceedWithGeneration(payload);
   };
 
-  // Called from step 6 (logged-in only) — saves pantry too
+  // Called from regen screen or step 6 (logged-in only) — saves pantry too
   const generateWithPantry = async () => {
     if (isGenerating) return;
-    const payload = agentPayload ?? buildAgentPayload(form);
+    const base = agentPayload ?? buildAgentPayload(form);
+    const payload: Record<string, unknown> = regenNotes.trim()
+      ? { ...base, regen_context: regenNotes.trim() }
+      : { ...base };
     setAgentPayload(payload);
 
     const allIngredients = [...ingredientRows, ...customIngredients].filter((r) => r.name.trim());
@@ -708,22 +713,45 @@ function OnboardPage() {
         : null;
 
     return (
-      <div className="mx-auto w-full max-w-4xl px-6 py-10 md:px-10 md:py-14">
-        <div className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-sand)] p-8 md:p-10">
-          <p className="text-[0.65rem] font-semibold text-[var(--color-sage)] uppercase tracking-widest mb-5">
-            Ready to cook
-          </p>
-          <h1 className="font-heading text-3xl text-[var(--color-ink)]">
-            Fresh batch for {displayName}
-          </h1>
+      <div className="mx-auto w-full max-w-2xl px-6 py-10 md:px-10 md:py-16">
+        <p className="mb-6 text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--color-sage)]">
+          New batch
+        </p>
+        <h1 className="font-heading text-4xl text-[var(--color-ink)]">
+          Time for a fresh batch
+        </h1>
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-[var(--color-ink-500)]">
+          <span className="font-semibold text-[var(--color-ink)]">{displayName}</span>
           {profileLine && (
-            <p className="mt-2 text-sm text-[var(--color-ink-500)]">{profileLine}</p>
+            <>
+              <span>·</span>
+              <span>{profileLine}</span>
+            </>
           )}
           {healthLine && (
-            <p className="mt-1 text-sm text-[var(--color-ink-500)]">{healthLine}</p>
+            <>
+              <span>·</span>
+              <span className="text-amber-700">{healthLine}</span>
+            </>
           )}
+        </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mt-8 space-y-4">
+          <div>
+            <label htmlFor="regen-notes" className="block text-sm font-semibold text-[var(--color-ink)] mb-2">
+              What&apos;s changed? <span className="font-normal text-[var(--color-ink-300)]">(optional)</span>
+            </label>
+            <textarea
+              id="regen-notes"
+              value={regenNotes}
+              onChange={(e) => setRegenNotes(e.target.value)}
+              placeholder="Any health updates, weight changes, or new goals for this batch?"
+              rows={3}
+              className="w-full resize-none rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] px-5 py-4 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-300)] focus:border-[var(--color-coral)] transition-colors"
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
             <button
               type="button"
               onClick={generateWithPantry}
@@ -732,25 +760,25 @@ function OnboardPage() {
                 isGenerating ? "animate-pulse" : "transition-transform hover:-translate-y-0.5"
               }`}
             >
-              {isGenerating ? `Building ${displayName}'s recipes...` : "Generate now →"}
+              {isGenerating ? `Building ${displayName}'s recipes...` : "Generate new batch →"}
             </button>
             <button
               type="button"
               onClick={() => { setIsRegenMode(false); setIsKitchenOnlyMode(true); setStep(6); }}
-              className="rounded-full border border-[var(--color-sand-deep)] px-7 py-3 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-sand-deep)] transition-colors"
+              className="rounded-full border border-[var(--color-sand-deep)] px-7 py-3 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-sand)] transition-colors"
             >
-              Update what&apos;s in the kitchen →
+              Update kitchen first →
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => { setIsRegenMode(false); setStep(1); }}
-            className="mt-6 block text-sm text-[var(--color-ink-500)] hover:text-[var(--color-coral)] transition-colors"
-          >
-            Edit {displayName}&apos;s profile
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => { setIsRegenMode(false); setStep(1); }}
+          className="mt-8 text-sm text-[var(--color-ink-500)] transition-colors hover:text-[var(--color-ink)]"
+        >
+          Edit {displayName}&apos;s profile
+        </button>
       </div>
     );
   }
@@ -1140,28 +1168,9 @@ function OnboardPage() {
               </div>
             </div>
 
-            {/* Only logged-out users get the generate button here */}
-            {!isLoggedIn && (
-              <>
-                <button
-                  type="button"
-                  onClick={generateRecipes}
-                  disabled={isGenerating}
-                  className={`rounded-full bg-[var(--color-coral)] px-7 py-3 text-sm font-semibold text-[var(--color-warm-white)] ${isGenerating ? "animate-pulse" : "transition-transform hover:-translate-y-0.5"}`}
-                >
-                  {isGenerating ? `Building ${form.dogName}'s recipe plan...` : `Generate ${form.dogName}'s recipes →`}
-                </button>
-                <p className="text-xs text-[var(--color-ink-500)]">
-                  Recipup recipes are a guide, not medical advice. Always speak to your vet before making significant dietary changes, especially if your dog has a health condition.
-                </p>
-              </>
-            )}
-
-            {isLoggedIn && !isEditMode && (
-              <p className="text-sm text-[var(--color-ink-500)]">
-                Up next: tell us what&apos;s in your kitchen. We&apos;ll build recipes around what you already have — and flag anything to pick up.
-              </p>
-            )}
+            <p className="text-xs text-[var(--color-ink-500)]">
+              Recipup recipes are a guide, not medical advice. Always speak to your vet before making significant dietary changes, especially if your dog has a health condition.
+            </p>
           </div>
         )}
 
@@ -1294,7 +1303,7 @@ function OnboardPage() {
             </button>
           </div>
         ) : isEditMode && step === totalSteps ? (
-          // Edit mode final step: save only, no generation
+          // Edit mode final step: save profile only, no generation
           <button
             type="button"
             onClick={saveProfileOnly}
@@ -1302,7 +1311,17 @@ function OnboardPage() {
           >
             Save changes →
           </button>
-        ) : step < totalSteps ? (
+        ) : !isEditMode && step === totalSteps ? (
+          // New dog final step: generate recipes (save modal for logged-out, direct for logged-in)
+          <button
+            type="button"
+            onClick={generateRecipes}
+            disabled={isGenerating}
+            className={`rounded-full bg-[var(--color-coral)] px-7 py-3 text-sm font-semibold text-[var(--color-warm-white)] ${isGenerating ? "animate-pulse" : "transition-transform hover:-translate-y-0.5"}`}
+          >
+            {isGenerating ? `Building ${form.dogName}'s recipes...` : `Generate ${form.dogName}'s recipes →`}
+          </button>
+        ) : (
           <button
             type="button"
             onClick={goNext}
@@ -1310,15 +1329,6 @@ function OnboardPage() {
             className="rounded-full bg-[var(--color-coral)] px-5 py-2 text-sm font-semibold text-[var(--color-warm-white)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             Continue →
-          </button>
-        ) : (
-          // Logged-out step 5: "Return home" (the generate button is embedded above)
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="rounded-full border border-[var(--color-sand-deep)] px-5 py-2 text-sm text-[var(--color-ink)]"
-          >
-            ← Return home
           </button>
         )}
       </div>

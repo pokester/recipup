@@ -159,10 +159,12 @@ export function LibraryClient({ initialRecipes }: { initialRecipes: SavedRecipeR
                   onClick={() => void handleDelete(item.id)}
                   disabled={deletingId === item.id}
                   title="Remove from library"
-                  className="text-sm text-[var(--color-ink-300)] transition-colors hover:text-red-600 disabled:opacity-40"
+                  className="text-[var(--color-ink-300)] transition-colors hover:text-[var(--color-ink)] disabled:opacity-40"
                   aria-label="Remove from library"
                 >
-                  🗑
+                  <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 3h2m-4 0h8M5 6h10l-.9 11H5.9L5 6zm3 3v5m4-5v5" />
+                  </svg>
                 </button>
                 <button
                   type="button"
@@ -179,10 +181,10 @@ export function LibraryClient({ initialRecipes }: { initialRecipes: SavedRecipeR
               <div className="border-t border-[var(--color-sand-deep)] px-6 pb-6 pt-5">
                 <div className="flex flex-wrap gap-3 text-xs text-[var(--color-ink-500)]">
                   {recipe.prep_time_mins != null && recipe.cook_time_mins != null && (
-                    <span>⏱ {recipe.prep_time_mins + recipe.cook_time_mins} min total</span>
+                    <span>{recipe.prep_time_mins + recipe.cook_time_mins} min total</span>
                   )}
                   {recipe.serves_days != null && (
-                    <span>🍽 Serves {recipe.serves_days} day{recipe.serves_days !== 1 ? "s" : ""}</span>
+                    <span>Serves {recipe.serves_days} day{recipe.serves_days !== 1 ? "s" : ""}</span>
                   )}
                 </div>
 

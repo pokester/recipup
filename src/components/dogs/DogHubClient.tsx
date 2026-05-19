@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   LineChart,
@@ -148,6 +148,20 @@ export function DogHubClient({
   });
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [rangeWeeks, setRangeWeeks] = useState<number | null>(12);
+  const [showActivationStrip, setShowActivationStrip] = useState(false);
+
+  useEffect(() => {
+    if (savedRecipes.length === 0) return;
+    try {
+      const dismissed = localStorage.getItem(`recipup_hub_strip_${dog.id}`);
+      if (!dismissed) setShowActivationStrip(true);
+    } catch { /* ignore */ }
+  }, [dog.id, savedRecipes.length]);
+
+  const dismissActivationStrip = () => {
+    try { localStorage.setItem(`recipup_hub_strip_${dog.id}`, "1"); } catch { /* ignore */ }
+    setShowActivationStrip(false);
+  };
 
   const switchTab = (tab: TabId) => {
     setActiveTab(tab);
@@ -195,7 +209,7 @@ export function DogHubClient({
           }`}
         >
           <p className="font-semibold text-[var(--color-ink)]">
-            {latestLogResponse.vet_flag ? "⚠️ " : ""}
+            {latestLogResponse.vet_flag ? "Vet note · " : ""}
             {displayName} · Week of {formatDate(latestLogResponse.week_start)}
           </p>
           <p className="mt-2 text-sm text-[var(--color-ink-500)]">{latestLogResponse.response_message}</p>
@@ -204,6 +218,36 @@ export function DogHubClient({
               {latestLogResponse.vet_message}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Activation strip — first-arrival nudge, one-time */}
+      {showActivationStrip && (
+        <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-[var(--color-butter-light)] bg-[var(--color-butter-muted)] px-5 py-4">
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-ink)]">
+              {savedRecipes.length} {savedRecipes.length === 1 ? "recipe" : "recipes"} saved for {displayName}.
+            </p>
+            <p className="mt-0.5 text-sm text-[var(--color-ink-500)]">
+              Ready to cook this week?{" "}
+              <Link
+                href="/planner/new"
+                className="font-semibold text-[var(--color-coral)] hover:underline"
+              >
+                Set up a meal plan →
+              </Link>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={dismissActivationStrip}
+            className="mt-0.5 shrink-0 text-[var(--color-ink-300)] transition-colors hover:text-[var(--color-ink)]"
+            aria-label="Dismiss"
+          >
+            <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
       )}
 
@@ -520,7 +564,7 @@ export function DogHubClient({
                           {log.notes && <p className="italic">{log.notes}</p>}
                           {log.response_message && (
                             <div className={`mt-3 rounded-xl border px-4 py-3 text-sm ${log.vet_flag ? "border-amber-200 bg-amber-50" : "border-[var(--color-sand-deep)] bg-[var(--color-sand)]"}`}>
-                              {log.vet_flag && <p className="mb-1 font-semibold text-amber-900">⚠️ {log.vet_message}</p>}
+                              {log.vet_flag && <p className="mb-1 font-semibold text-amber-900">{log.vet_message}</p>}
                               <p className="text-[var(--color-ink-500)]">{log.response_message}</p>
                             </div>
                           )}

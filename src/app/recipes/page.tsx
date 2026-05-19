@@ -2,6 +2,7 @@
 
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
 import { RecipeCard, type Recipe } from "@/components/recipe/RecipeCard";
@@ -65,6 +66,7 @@ export default function RecipesPage() {
   const [limitError, setLimitError] = useState<"monthly_limit_reached" | "rate_limit_exceeded" | null>(null);
   const [showCostUpgrade, setShowCostUpgrade] = useState(false);
   const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
+  const [currentDogId, setCurrentDogId] = useState<string | null>(null);
 
   const intervalRef = useRef<number | null>(null);
 
@@ -161,10 +163,12 @@ export default function RecipesPage() {
       }
       const ctx = window.localStorage.getItem("recipup_pantry_context");
       const unavail = window.localStorage.getItem("recipup_unavailable_equipment");
+      const dogId = window.localStorage.getItem("recipup_current_dog_id");
       startTransition(() => {
         setDogProfile(JSON.parse(raw) as DogProfile);
         if (ctx) setPantryContext(ctx);
         if (unavail) setUnavailableEquipment(JSON.parse(unavail) as string[]);
+        if (dogId) setCurrentDogId(dogId);
         setPantryLoaded(true);
       });
     } catch {
@@ -578,6 +582,40 @@ export default function RecipesPage() {
               </section>
             )}
 
+            {/* What's next */}
+            {savedMap.size > 0 && (
+              <section className="rounded-2xl border border-[var(--color-sand-deep)] bg-[var(--color-warm-white)] p-6 shadow-[var(--shadow-card)]">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-[var(--color-ink-500)]">
+                  What&apos;s next
+                </p>
+                <div className="space-y-3">
+                  {currentDogId && (
+                    <Link
+                      href={`/dogs/${currentDogId}`}
+                      className="flex items-center justify-between gap-4 rounded-xl border border-[var(--color-sand-deep)] px-4 py-3 text-sm font-medium text-[var(--color-ink)] transition-colors hover:border-[var(--color-ink-300)] hover:bg-[var(--color-sand)]"
+                    >
+                      <span>Back to {displayDogName}&apos;s hub</span>
+                      <span className="text-[var(--color-ink-300)]">→</span>
+                    </Link>
+                  )}
+                  <Link
+                    href="/planner/new"
+                    className="flex items-center justify-between gap-4 rounded-xl border border-[var(--color-sand-deep)] px-4 py-3 text-sm font-medium text-[var(--color-ink)] transition-colors hover:border-[var(--color-ink-300)] hover:bg-[var(--color-sand)]"
+                  >
+                    <span>Set up a meal plan</span>
+                    <span className="text-[var(--color-ink-300)]">→</span>
+                  </Link>
+                  <Link
+                    href="/pantry"
+                    className="flex items-center justify-between gap-4 rounded-xl border border-[var(--color-sand-deep)] px-4 py-3 text-sm font-medium text-[var(--color-ink)] transition-colors hover:border-[var(--color-ink-300)] hover:bg-[var(--color-sand)]"
+                  >
+                    <span>Tell us what&apos;s in your kitchen</span>
+                    <span className="text-[var(--color-ink-300)]">→</span>
+                  </Link>
+                </div>
+              </section>
+            )}
+
             {/* Actions row */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <button
@@ -586,7 +624,7 @@ export default function RecipesPage() {
                   dogProfile && void fetchRecipes(dogProfile, pantryContext)
                 }
                 disabled={!dogProfile}
-                className="rounded-full bg-[var(--color-coral)] px-6 py-3 text-sm font-semibold text-[var(--color-warm-white)] transition-transform hover:-translate-y-0.5 disabled:opacity-40"
+                className="rounded-full border border-[var(--color-sand-deep)] px-6 py-3 text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-sand)] disabled:opacity-40"
               >
                 Generate new recipes →
               </button>

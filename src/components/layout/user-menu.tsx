@@ -43,7 +43,7 @@ export function UserMenu({ user }: { user: User }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-coral)] font-serif text-sm font-semibold text-[var(--color-warm-white)] transition-opacity hover:opacity-80"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-coral)] font-heading text-sm font-semibold text-[var(--color-warm-white)] transition-opacity hover:opacity-80"
         aria-label="Account menu"
       >
         {user.user_metadata?.avatar_url ? (

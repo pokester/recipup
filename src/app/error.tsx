@@ -29,7 +29,7 @@ export default function Error({
         <div className="flex justify-center gap-4">
           <button
             onClick={reset}
-            className="rounded-full bg-[var(--color-coral)] px-6 py-3 font-medium text-white transition-colors hover:bg-[var(--color-coral-dark)]"
+            className="rounded-full bg-[var(--color-coral)] px-6 py-3 font-medium text-[var(--color-warm-white)] transition-colors hover:bg-[var(--color-coral-dark)]"
           >
             Try again
           </button>

@@ -48,7 +48,7 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
         <button
           type="button"
           onClick={dismiss}
-          className="text-xs text-[var(--color-muted)] hover:text-[var(--color-ink)]"
+          className="text-xs text-[var(--color-ink-500)] hover:text-[var(--color-ink)]"
           aria-label="Dismiss"
         >
           ✕

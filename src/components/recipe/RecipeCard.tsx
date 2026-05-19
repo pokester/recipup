@@ -138,7 +138,7 @@ function ExpandableSection({
         </span>
         <svg
           viewBox="0 0 24 24"
-          className={`h-4 w-4 text-[var(--color-muted)] shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-[var(--color-ink-500)] shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
@@ -258,13 +258,13 @@ export function RecipeCard({
       <div className="p-6 border-b border-[var(--color-border)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h2 className="font-serif text-2xl font-semibold text-[var(--color-ink)] leading-snug">
+            <h2 className="font-heading text-2xl font-semibold text-[var(--color-ink)] leading-snug">
               {recipe.name}
             </h2>
-            <p className="mt-1 text-sm italic text-[var(--color-muted)]">
+            <p className="mt-1 text-sm italic text-[var(--color-ink-500)]">
               {recipe.tagline}
             </p>
-            <div className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-xs text-[var(--color-muted)]">
+            <div className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-xs text-[var(--color-ink-500)]">
               <span>{methodLabel}</span>
               <span>·</span>
               <span>{recipe.prep_time_mins}min prep</span>
@@ -285,7 +285,7 @@ export function RecipeCard({
             >
               ✓ {safetyLabel}
             </div>
-            <span className="text-xs text-[var(--color-muted)]">
+            <span className="text-xs text-[var(--color-ink-500)]">
               Safety: {safetyScore.toFixed(1)}/10
             </span>
             {process.env.NEXT_PUBLIC_SUPABASE_URL && (
@@ -342,7 +342,7 @@ export function RecipeCard({
             </li>
           )}
           {!dogIdentity && !recipe.breed_notes && !dogHealthConditions && !dogAllergens && (
-            <li className="text-[var(--color-muted)]">
+            <li className="text-[var(--color-ink-500)]">
               Personalised to {dogName}&apos;s nutritional needs
             </li>
           )}
@@ -356,10 +356,10 @@ export function RecipeCard({
         <ExpandableSection title="Nutrition Per Day" defaultOpen={true}>
           {/* Calorie hero */}
           <div className="flex items-baseline gap-2 pt-3 pb-4">
-            <span className="font-serif text-[2.5rem] font-semibold leading-none text-[var(--color-ink)]">
+            <span className="font-heading text-[2.5rem] font-semibold leading-none text-[var(--color-ink)]">
               {recipe.nutrition_per_day.calories}
             </span>
-            <span className="text-sm text-[var(--color-muted)]">kcal / day</span>
+            <span className="text-sm text-[var(--color-ink-500)]">kcal / day</span>
           </div>
 
           {/* Macro proportion bar */}
@@ -371,15 +371,15 @@ export function RecipeCard({
                 <div style={{ width: `${carbsPct}%` }} className="bg-[var(--color-butter)]" />
               </div>
               <div className="flex justify-between mb-5 px-0.5">
-                <span className="flex items-center gap-1 text-[0.65rem] text-[var(--color-muted)]">
+                <span className="flex items-center gap-1 text-[0.65rem] text-[var(--color-ink-500)]">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-sage)]" aria-hidden="true" />
                   Protein {proteinPct}%
                 </span>
-                <span className="flex items-center gap-1 text-[0.65rem] text-[var(--color-muted)]">
+                <span className="flex items-center gap-1 text-[0.65rem] text-[var(--color-ink-500)]">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-coral)]" aria-hidden="true" />
                   Fat {fatPct}%
                 </span>
-                <span className="flex items-center gap-1 text-[0.65rem] text-[var(--color-muted)]">
+                <span className="flex items-center gap-1 text-[0.65rem] text-[var(--color-ink-500)]">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-butter)]" aria-hidden="true" />
                   Carbs {carbsPct}%
                 </span>
@@ -397,7 +397,7 @@ export function RecipeCard({
                 {recipe.nutrition_per_day.protein_g}g
               </div>
               {macroKcalTotal > 0 && (
-                <div className="text-[0.65rem] text-[var(--color-muted)] mt-1.5 leading-snug">
+                <div className="text-[0.65rem] text-[var(--color-ink-500)] mt-1.5 leading-snug">
                   {proteinKcal} kcal
                   <br />
                   {proteinPct}% of cals
@@ -413,7 +413,7 @@ export function RecipeCard({
                 {recipe.nutrition_per_day.fat_g}g
               </div>
               {macroKcalTotal > 0 && (
-                <div className="text-[0.65rem] text-[var(--color-muted)] mt-1.5 leading-snug">
+                <div className="text-[0.65rem] text-[var(--color-ink-500)] mt-1.5 leading-snug">
                   {fatKcal} kcal
                   <br />
                   {fatPct}% of cals
@@ -429,7 +429,7 @@ export function RecipeCard({
                 {recipe.nutrition_per_day.carbs_g}g
               </div>
               {macroKcalTotal > 0 && (
-                <div className="text-[0.65rem] text-[var(--color-muted)] mt-1.5 leading-snug">
+                <div className="text-[0.65rem] text-[var(--color-ink-500)] mt-1.5 leading-snug">
                   {carbsKcal} kcal
                   <br />
                   {carbsPct}% of cals
@@ -465,7 +465,7 @@ export function RecipeCard({
                   }}
                 >
                   {isComplete ? (
-                    <svg viewBox="0 0 12 12" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                    <svg viewBox="0 0 12 12" className="w-3 h-3 text-[var(--color-warm-white)]" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                       <path d="M2.5 6l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   ) : (
@@ -483,7 +483,7 @@ export function RecipeCard({
               </div>
             </div>
             {supplements.length > 0 && !isComplete && (
-              <p className="text-sm text-[var(--color-muted)]">
+              <p className="text-sm text-[var(--color-ink-500)]">
                 See Supplements below to complete {dogName}&apos;s daily nutrition.
               </p>
             )}
@@ -507,7 +507,7 @@ export function RecipeCard({
                       {supp.daily_amount}
                     </span>
                   </div>
-                  <p className="text-sm text-[var(--color-muted)]">
+                  <p className="text-sm text-[var(--color-ink-500)]">
                     <strong className="text-[var(--color-ink)]">
                       Why it matters:
                     </strong>{" "}
@@ -536,7 +536,7 @@ export function RecipeCard({
                     className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                       gramsMode === mode
                         ? "bg-[var(--color-warm-white)] shadow-sm text-[var(--color-ink)]"
-                        : "text-[var(--color-muted)]"
+                        : "text-[var(--color-ink-500)]"
                     }`}
                   >
                     {mode.charAt(0).toUpperCase() + mode.slice(1)}
@@ -552,7 +552,7 @@ export function RecipeCard({
                     className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                       batchDays === d
                         ? "bg-[var(--color-warm-white)] shadow-sm text-[var(--color-ink)]"
-                        : "text-[var(--color-muted)]"
+                        : "text-[var(--color-ink-500)]"
                     }`}
                   >
                     ×{d}
@@ -564,7 +564,7 @@ export function RecipeCard({
             <div className="grid md:grid-cols-2 gap-8">
               {/* Ingredients */}
               <div>
-                <h4 className="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-3">
+                <h4 className="text-xs font-semibold text-[var(--color-ink-500)] uppercase tracking-wider mb-3">
                   Ingredients
                 </h4>
                 <ul className="space-y-2">
@@ -585,7 +585,7 @@ export function RecipeCard({
                           <span className="text-[var(--color-ink)] font-medium">
                             {ing.name}
                           </span>
-                          <span className="text-[var(--color-muted)] ml-2">
+                          <span className="text-[var(--color-ink-500)] ml-2">
                             {gramsMode === "grams"
                               ? `${fmtQty(scaledGrams)}g`
                               : scaledCups !== null
@@ -593,7 +593,7 @@ export function RecipeCard({
                                 : ing.cups}
                           </span>
                           {ing.notes && (
-                            <div className="text-xs text-[var(--color-muted)] mt-0.5">
+                            <div className="text-xs text-[var(--color-ink-500)] mt-0.5">
                               {ing.notes}
                             </div>
                           )}
@@ -602,7 +602,7 @@ export function RecipeCard({
                               href={`https://www.tesco.com/groceries/en-GB/search?query=${encodeURIComponent(ing.name)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="ml-2 rounded-full bg-[var(--color-coral)] px-2 py-0.5 text-xs font-semibold text-white"
+                              className="ml-2 rounded-full bg-[var(--color-coral)] px-2 py-0.5 text-xs font-semibold text-[var(--color-warm-white)]"
                             >
                               Buy
                             </a>
@@ -621,7 +621,7 @@ export function RecipeCard({
 
               {/* Method */}
               <div>
-                <h4 className="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-3">
+                <h4 className="text-xs font-semibold text-[var(--color-ink-500)] uppercase tracking-wider mb-3">
                   Method
                 </h4>
                 <ol className="space-y-3">
@@ -630,7 +630,7 @@ export function RecipeCard({
                       key={`${recipe.id}-step-${idx}`}
                       className="flex gap-3 text-sm"
                     >
-                      <span className="font-serif text-xl font-semibold text-[var(--color-coral)] opacity-40 min-w-[1.5rem] leading-none mt-0.5 shrink-0">
+                      <span className="font-heading text-xl font-semibold text-[var(--color-coral)] opacity-40 min-w-[1.5rem] leading-none mt-0.5 shrink-0">
                         {idx + 1}
                       </span>
                       <span className="text-[var(--color-ink)] leading-relaxed">
@@ -651,7 +651,7 @@ export function RecipeCard({
               dailyCost !== undefined && dailyCost > 0 ? (
                 <>
                   <div className="bg-[var(--color-butter-muted)] rounded-xl p-4">
-                    <div className="text-xs text-[var(--color-muted)] uppercase tracking-wider mb-1">
+                    <div className="text-xs text-[var(--color-ink-500)] uppercase tracking-wider mb-1">
                       Cost per Day
                     </div>
                     <div className="text-3xl font-semibold text-[var(--color-ink)]">
@@ -669,12 +669,12 @@ export function RecipeCard({
                         <p className="font-semibold text-[var(--color-ink)]">
                           {recipe.kibble_comparison.message_honest}
                         </p>
-                        <p className="text-[var(--color-muted)] mt-1">
+                        <p className="text-[var(--color-ink-500)] mt-1">
                           {recipe.kibble_comparison.message_reframe}
                         </p>
                         {recipe.kibble_comparison.baseline_source ===
                           "estimate" && (
-                          <p className="mt-1 text-xs text-[var(--color-subtle)]">
+                          <p className="mt-1 text-xs text-[var(--color-ink-300)]">
                             Based on typical kibble costs for your dog&apos;s
                             size.
                           </p>
@@ -717,11 +717,11 @@ export function RecipeCard({
                             ))}
                           </div>
                           {recipe.has_unpriced_items && (
-                            <p className="mt-2 text-xs italic text-[var(--color-subtle)]">
+                            <p className="mt-2 text-xs italic text-[var(--color-ink-300)]">
                               * Some ingredients excluded from total.
                             </p>
                           )}
-                          <p className="mt-2 text-xs text-[var(--color-subtle)]">
+                          <p className="mt-2 text-xs text-[var(--color-ink-300)]">
                             Prices from {supermarket}
                             {syncDate ? ` · Updated ${syncDate}` : ""}
                           </p>
@@ -748,7 +748,7 @@ export function RecipeCard({
                                 key={comp.brand}
                                 className="flex items-center justify-between text-xs"
                               >
-                                <span className="text-[var(--color-muted)]">
+                                <span className="text-[var(--color-ink-500)]">
                                   approx. {comp.brand}: ~{currency}
                                   {comp.their_daily_cost.toFixed(2)}/day for a{" "}
                                   {comp.dog_weight_kg}kg dog
@@ -761,7 +761,7 @@ export function RecipeCard({
                                 )}
                               </div>
                             ))}
-                            <p className="mt-1 text-xs italic text-[var(--color-subtle)]">
+                            <p className="mt-1 text-xs italic text-[var(--color-ink-300)]">
                               Competitor prices are publicly listed estimates
                               and may vary.
                             </p>
@@ -771,7 +771,7 @@ export function RecipeCard({
                     )}
                 </>
               ) : (
-                <p className="text-sm text-[var(--color-muted)]">
+                <p className="text-sm text-[var(--color-ink-500)]">
                   Cost data not available for this recipe.
                 </p>
               )
@@ -780,14 +780,14 @@ export function RecipeCard({
                 <p className="text-sm font-semibold text-[var(--color-ink)] mb-1">
                   Cost per day
                 </p>
-                <p className="text-sm text-[var(--color-muted)] mb-4">
+                <p className="text-sm text-[var(--color-ink-500)] mb-4">
                   Upgrade to Pack to see costs, compare to fresh delivery, and
                   track your savings.
                 </p>
                 <button
                   type="button"
                   onClick={onCostUpgradeClick}
-                  className="rounded-full bg-[var(--color-coral)] text-white px-5 py-2 text-sm font-semibold hover:bg-[var(--color-coral-light)] transition-colors"
+                  className="rounded-full bg-[var(--color-coral)] text-[var(--color-warm-white)] px-5 py-2 text-sm font-semibold hover:bg-[var(--color-coral-light)] transition-colors"
                 >
                   Upgrade to Pack
                 </button>
@@ -824,7 +824,7 @@ export function RecipeCard({
                 </p>
               )}
             </div>
-            <p className="text-xs text-[var(--color-muted)]">
+            <p className="text-xs text-[var(--color-ink-500)]">
               Recipup recipes are a guide, not medical advice. Always speak to
               your vet before making significant dietary changes, especially if
               your dog has a health condition.
@@ -847,7 +847,7 @@ export function RecipeCard({
           >
             Shop on Amazon UK →
           </a>
-          <p className="mt-0.5 text-xs text-[var(--color-subtle)]">
+          <p className="mt-0.5 text-xs text-[var(--color-ink-300)]">
             Affiliate link — we may earn a small commission at no extra cost to
             you.
           </p>
@@ -859,7 +859,7 @@ export function RecipeCard({
         <button
           type="button"
           onClick={onSave}
-          className="flex-1 rounded-full bg-[var(--color-coral)] text-white px-5 py-3 text-sm font-semibold hover:bg-[var(--color-coral-light)] transition-colors"
+          className="flex-1 rounded-full bg-[var(--color-coral)] text-[var(--color-warm-white)] px-5 py-3 text-sm font-semibold hover:bg-[var(--color-coral-light)] transition-colors"
         >
           {isSaved ? "Saved ✓" : "Save Recipe"}
         </button>
@@ -875,11 +875,13 @@ export function RecipeCard({
         <button
           type="button"
           onClick={() => window.print()}
-          className="rounded-full px-4 py-3 text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors no-print"
+          className="rounded-full px-4 py-3 text-[var(--color-ink-500)] hover:text-[var(--color-ink)] transition-colors no-print"
           title="Print this recipe"
           aria-label="Print recipe"
         >
-          🖨️
+          <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 2h8v4H6V2zm-2 5h12a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2v2H6v-2H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zm10 2.5a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1zM6 14h8v4H6v-4z" />
+          </svg>
         </button>
       </div>
     </article>
