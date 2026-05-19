@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function SiteFooter() {
@@ -7,13 +8,7 @@ export function SiteFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo-white.png"
-              alt="Recipup"
-              height={36}
-              style={{ height: "36px", width: "auto" }}
-            />
+            <Image src="/logo-white.png" alt="Recipup" width={130} height={36} />
             <p className="mt-3 text-sm text-[var(--color-warm-white)]/60">
               Real recipes. Happy dogs.
             </p>

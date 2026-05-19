@@ -42,7 +42,7 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-20 border-b border-[var(--color-border)] bg-[var(--color-warm-white)]/95 backdrop-blur-sm">
       <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 md:px-10">
         <Link href={user ? "/dashboard" : "/"} className="transition-opacity hover:opacity-80">
-          <Logo height={44} />
+          <Logo height={44} priority />
         </Link>
 
         {user ? (
