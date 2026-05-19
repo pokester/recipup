@@ -181,6 +181,7 @@ export default function LoginPage() {
               <input
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]"
@@ -193,6 +194,7 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-warm-white)] px-4 pr-12 outline-none focus:border-[var(--color-coral)]"

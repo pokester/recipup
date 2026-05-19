@@ -34,7 +34,7 @@ function passwordStrength(pw: string): { label: string; color: string; width: st
   const score = (pw.length >= 8 ? 1 : 0) + (pw.length >= 12 ? 1 : 0) + (hasUpper ? 1 : 0) + (hasNumber ? 1 : 0) + (hasSymbol ? 1 : 0);
   if (score <= 2) return { label: "Weak", color: "bg-red-400", width: "w-1/3" };
   if (score <= 3) return { label: "Fair", color: "bg-amber-400", width: "w-2/3" };
-  return { label: "Strong", color: "bg-green-500", width: "w-full" };
+  return { label: "Strong", color: "bg-[var(--color-sage)]", width: "w-full" };
 }
 
 function mapSignupErrorMessage(message: string) {
@@ -263,6 +263,7 @@ export default function SignupPage() {
               <input
                 type="text"
                 required
+                autoComplete="name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]"
@@ -274,6 +275,7 @@ export default function SignupPage() {
               <input
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-warm-white)] px-4 outline-none focus:border-[var(--color-coral)]"
@@ -287,6 +289,7 @@ export default function SignupPage() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-11 w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-warm-white)] px-4 pr-12 outline-none focus:border-[var(--color-coral)]"

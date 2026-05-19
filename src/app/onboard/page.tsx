@@ -692,7 +692,7 @@ function OnboardPage() {
 
   if (!authChecked) {
     // Tiny loading state while we resolve auth (prevents flash of wrong step count)
-    return <div className="flex min-h-screen items-center justify-center" />;
+    return <div className="flex min-h-dvh items-center justify-center" />;
   }
 
   // Regen mode: dog_id was present and profile loaded — skip the full wizard

@@ -63,6 +63,7 @@ export function LibraryClient({ initialRecipes }: { initialRecipes: SavedRecipeR
   const [recipes, setRecipes] = useState<SavedRecipeRow[]>(initialRecipes);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleToggleFavourite = async (item: SavedRecipeRow) => {
     const newVal = !item.is_favourite;
@@ -71,8 +72,8 @@ export function LibraryClient({ initialRecipes }: { initialRecipes: SavedRecipeR
     await supabase.from("saved_recipes").update({ is_favourite: newVal }).eq("id", item.id);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Remove this recipe from your library?")) return;
+  const handleDeleteConfirm = async (id: string) => {
+    setConfirmDeleteId(null);
     setDeletingId(id);
     setRecipes((prev) => prev.filter((r) => r.id !== id));
     const supabase = createClient();
@@ -154,18 +155,40 @@ export function LibraryClient({ initialRecipes }: { initialRecipes: SavedRecipeR
                 >
                   {item.is_favourite ? "♥" : "♡"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => void handleDelete(item.id)}
-                  disabled={deletingId === item.id}
-                  title="Remove from library"
-                  className="text-[var(--color-ink-300)] transition-colors hover:text-[var(--color-ink)] disabled:opacity-40"
-                  aria-label="Remove from library"
-                >
-                  <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 3h2m-4 0h8M5 6h10l-.9 11H5.9L5 6zm3 3v5m4-5v5" />
-                  </svg>
-                </button>
+                {confirmDeleteId === item.id ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteConfirm(item.id)}
+                      disabled={deletingId === item.id}
+                      className="rounded-full border border-[var(--color-ink-300)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-sand)] disabled:opacity-40"
+                      aria-label="Confirm remove"
+                    >
+                      Remove
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="text-xs text-[var(--color-ink-300)] transition-colors hover:text-[var(--color-ink)]"
+                      aria-label="Cancel"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteId(item.id)}
+                    disabled={deletingId === item.id}
+                    title="Remove from library"
+                    className="text-[var(--color-ink-300)] transition-colors hover:text-[var(--color-ink)] disabled:opacity-40"
+                    aria-label="Remove from library"
+                  >
+                    <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 3h2m-4 0h8M5 6h10l-.9 11H5.9L5 6zm3 3v5m4-5v5" />
+                    </svg>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => toggleExpand(item.id)}

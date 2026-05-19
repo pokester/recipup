@@ -7,7 +7,7 @@ type SiteLayoutProps = {
 
 export function SiteLayout({ children }: SiteLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-cream)] text-[var(--color-ink)]">
+    <div className="flex min-h-dvh flex-col bg-[var(--color-cream)] text-[var(--color-ink)]">
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />

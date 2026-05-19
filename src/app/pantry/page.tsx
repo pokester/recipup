@@ -270,7 +270,7 @@ export default function PantryPage() {
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button
                 type="button"
-                onClick={() => window.location.reload()}
+                onClick={() => router.refresh()}
                 className="rounded-full bg-[var(--color-coral)] px-5 py-2 text-sm font-semibold text-[var(--color-warm-white)]"
               >
                 Try again

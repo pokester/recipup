@@ -487,8 +487,8 @@ export function PlanView({ planId }: { planId: string }) {
                     </div>
                     <div className="mt-2 flex items-center gap-1.5 text-xs">
                       {rd.cook_on_day ? (
-                        <span className="flex items-center gap-1 text-green-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Cook today
+                        <span className="flex items-center gap-1 text-[var(--color-forest)]">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-sage)]" /> Cook today
                         </span>
                       ) : (
                         <span className="text-[var(--color-ink-300)]">From batch</span>
@@ -583,7 +583,7 @@ export function PlanView({ planId }: { planId: string }) {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {rd.cook_on_day && <span className="h-2 w-2 rounded-full bg-green-500" />}
+                      {rd.cook_on_day && <span className="h-2 w-2 rounded-full bg-[var(--color-sage)]" />}
                       <span className="text-xs text-[var(--color-ink-300)]">{isExpanded ? "▲" : "▼"}</span>
                     </div>
                   </button>
@@ -599,8 +599,8 @@ export function PlanView({ planId }: { planId: string }) {
                         </span>
                       </div>
                       {rd.cook_on_day ? (
-                        <p className="mt-3 flex items-center gap-1.5 text-sm text-green-700">
-                          <span className="h-2 w-2 rounded-full bg-green-500" /> Cook today
+                        <p className="mt-3 flex items-center gap-1.5 text-sm text-[var(--color-forest)]">
+                          <span className="h-2 w-2 rounded-full bg-[var(--color-sage)]" /> Cook today
                         </p>
                       ) : (
                         <p className="mt-3 text-sm text-[var(--color-ink-500)]">From batch</p>

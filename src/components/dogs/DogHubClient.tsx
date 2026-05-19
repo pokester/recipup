@@ -351,7 +351,7 @@ export function DogHubClient({
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <div className="flex items-center gap-2">
-                            {isActive && <span className="h-2 w-2 rounded-full bg-green-500" />}
+                            {isActive && <span className="h-2 w-2 rounded-full bg-[var(--color-sage)]" />}
                             <p className="font-semibold text-[var(--color-ink)]">
                               {formatDate(plan.start_date)} – {formatDate(plan.end_date)}
                             </p>

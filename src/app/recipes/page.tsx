@@ -308,7 +308,7 @@ export default function RecipesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--color-oat)]">
+    <div className="min-h-dvh bg-[var(--color-oat)]">
       {/* Cost upgrade modal */}
       {showCostUpgrade && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 px-4">
@@ -342,7 +342,7 @@ export default function RecipesPage() {
 
       {/* Loading state */}
       {status === "loading" && (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--color-sand)] px-6 text-center">
+        <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--color-sand)] px-6 text-center">
           <div className="mb-6">
             <Logo height={48} />
           </div>

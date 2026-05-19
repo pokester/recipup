@@ -46,7 +46,7 @@ function ageLabel(years: number | null): string | null {
 }
 
 const DOT_COLORS = {
-  green: "bg-green-500",
+  green: "bg-[var(--color-sage)]",
   amber: "bg-amber-400",
   grey: "bg-[var(--color-ink-100)]",
 };
