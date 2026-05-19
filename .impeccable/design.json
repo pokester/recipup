@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-18T00:00:00Z",
+  "title": "Design System: Recipup",
+  "extensions": {
+    "colorMeta": {
+      "kiln":                { "role": "primary",   "displayName": "Kiln",                 "canonical": "#C4614A", "tonalRamp": ["#2B1209","#4E1F12","#73311D","#9A452D","#C4614A","#D6887A","#EAB5AB","#F8E4DF"] },
+      "kiln-light":          { "role": "primary",   "displayName": "Kiln Light",           "canonical": "#E8957E", "tonalRamp": [] },
+      "kiln-deep":           { "role": "primary",   "displayName": "Kiln Deep",            "canonical": "#A8612E", "tonalRamp": [] },
+      "kiln-muted":          { "role": "primary",   "displayName": "Kiln Muted",           "canonical": "#F2DDD9", "tonalRamp": [] },
+      "garden-shade":        { "role": "secondary", "displayName": "Garden Shade",         "canonical": "#2D4A3E", "tonalRamp": ["#0A1512","#15251E","#213829","#2D4A3E","#456E60","#6B9587","#9BBDB5","#D4E9E5"] },
+      "garden-shade-light":  { "role": "secondary", "displayName": "Garden Shade Light",   "canonical": "#4A7A68", "tonalRamp": [] },
+      "garden-shade-muted":  { "role": "secondary", "displayName": "Garden Shade Muted",   "canonical": "#D4E4DF", "tonalRamp": [] },
+      "windowsill-sage":     { "role": "tertiary",  "displayName": "Windowsill Sage",      "canonical": "#7A9E7A", "tonalRamp": ["#1A2B1A","#2D4D2D","#476547","#637F63","#7A9E7A","#9BB99B","#BDD3BD","#DEF0DE"] },
+      "windowsill-sage-light":{ "role": "tertiary", "displayName": "Windowsill Sage Light","canonical": "#B5CDB5", "tonalRamp": [] },
+      "windowsill-sage-muted":{ "role": "tertiary", "displayName": "Windowsill Sage Muted","canonical": "#E8F0E8", "tonalRamp": [] },
+      "set-honey":           { "role": "tertiary",  "displayName": "Set Honey",            "canonical": "#E8BE4B", "tonalRamp": ["#2E2107","#5B3F0D","#8B6114","#B88A24","#E8BE4B","#EDD082","#F4E4B2","#FAF3D8"] },
+      "set-honey-light":     { "role": "tertiary",  "displayName": "Set Honey Light",      "canonical": "#F5DFA0", "tonalRamp": [] },
+      "set-honey-muted":     { "role": "tertiary",  "displayName": "Set Honey Muted",      "canonical": "#FBF3D8", "tonalRamp": [] },
+      "kitchen-linen":       { "role": "neutral",   "displayName": "Kitchen Linen",        "canonical": "#FDFAF6", "tonalRamp": ["#1A1915","#34322C","#545146","#7E7B70","#A5A298","#C8C6BF","#E3E1DB","#FDFAF6"] },
+      "oat":                 { "role": "neutral",   "displayName": "Oat",                  "canonical": "#F7F3ED", "tonalRamp": [] },
+      "sand":                { "role": "neutral",   "displayName": "Sand",                 "canonical": "#F5EDE0", "tonalRamp": [] },
+      "sand-deep":           { "role": "neutral",   "displayName": "Sand Deep",            "canonical": "#ECD9C6", "tonalRamp": [] },
+      "inkwell":             { "role": "neutral",   "displayName": "Inkwell",              "canonical": "#1C1A17", "tonalRamp": [] },
+      "ink-dark":            { "role": "neutral",   "displayName": "Ink Dark",             "canonical": "#3D3529", "tonalRamp": [] },
+      "ink-mid":             { "role": "neutral",   "displayName": "Ink Mid",              "canonical": "#6A5C4E", "tonalRamp": [] },
+      "ink-light":           { "role": "neutral",   "displayName": "Ink Light",            "canonical": "#A89585", "tonalRamp": [] },
+      "ink-faint":           { "role": "neutral",   "displayName": "Ink Faint",            "canonical": "#D4C4B8", "tonalRamp": [] },
+      "ink":                 { "role": "neutral",   "displayName": "Ink",                  "canonical": "#2C2416", "tonalRamp": [] },
+      "muted":               { "role": "neutral",   "displayName": "Muted",                "canonical": "#8A7E72", "tonalRamp": [] },
+      "subtle":              { "role": "neutral",   "displayName": "Subtle",               "canonical": "#C4B9AE", "tonalRamp": [] },
+      "border":              { "role": "neutral",   "displayName": "Border",               "canonical": "#E8E0D6", "tonalRamp": [] },
+      "border-strong":       { "role": "neutral",   "displayName": "Border Strong",        "canonical": "#C4B9AE", "tonalRamp": [] }
+    },
+    "typographyMeta": {
+      "display":  { "displayName": "Display",  "purpose": "Hero headlines and primary greeting. One per page." },
+      "headline": { "displayName": "Headline", "purpose": "Major section headings inside the app and marketing pages." },
+      "title":    { "displayName": "Title",    "purpose": "Recipe names, dog names in cards, subsection headings." },
+      "body":     { "displayName": "Body",     "purpose": "Instructional and descriptive text. Max line length 65–75ch." },
+      "label":    { "displayName": "Label / Eyebrow", "purpose": "Section markers, metadata tags, nutrition labels. One per visual group." }
+    },
+    "shadows": [
+      { "name": "card-ambient", "value": "0 2px 12px 0 rgba(28, 26, 23, 0.07)", "purpose": "All resting cards. Separates warm-white card from warm-white page. Never used decoratively." },
+      { "name": "card-lift",    "value": "0 8px 32px 0 rgba(28, 26, 23, 0.12)", "purpose": "Hover state on interactive cards. Signals 'pickable'. Not used at rest." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "150ms ease-out",  "purpose": "Button hover, colour transitions, opacity fades." },
+      { "name": "ease-expand",   "value": "300ms ease-in-out","purpose": "Expandable section open/close via grid-rows. Never animate height or max-height directly." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px",  "purpose": "Navigation switches to desktop layout. Grid columns expand." },
+      { "name": "lg", "value": "1024px", "purpose": "Max-width container becomes fully active at 72rem." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary CTA. Pill shape, Kiln fill. Lifts 1px on hover.",
+      "html": "<button class=\"ds-btn-primary\">Build my dog’s recipe plan →</button>",
+      "css": ".ds-btn-primary { background: #C4614A; color: #FDFAF6; padding: 0.75rem 1.5rem; border-radius: 9999px; border: none; font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; transition: background 150ms ease-out, transform 150ms ease-out; } .ds-btn-primary:hover { background: #E8957E; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid #C4614A; outline-offset: 3px; } .ds-btn-primary:active { transform: translateY(0); background: #A8612E; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary CTA. Pill, outlined with Border Strong. Hover fills Sand.",
+      "html": "<button class=\"ds-btn-secondary\">See how it works</button>",
+      "css": ".ds-btn-secondary { background: transparent; color: #2C2416; padding: 0.75rem 1.5rem; border-radius: 9999px; border: 1.5px solid #C4B9AE; font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; transition: background 150ms ease-out; } .ds-btn-secondary:hover { background: #F5EDE0; } .ds-btn-secondary:focus-visible { outline: 2px solid #C4614A; outline-offset: 3px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Default surface card. Rounded-card, Card Ambient shadow, Border edge.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Weekly health check-in</h3><p class=\"ds-card-body\">It takes 60 seconds and helps us keep the recipes spot on.</p></div>",
+      "css": ".ds-card { background: #FDFAF6; border-radius: 1.25rem; border: 1px solid #E8E0D6; box-shadow: 0 2px 12px 0 rgba(28, 26, 23, 0.07); padding: 1.5rem; transition: box-shadow 150ms ease-out; } .ds-card:hover { box-shadow: 0 8px 32px 0 rgba(28, 26, 23, 0.12); } .ds-card-title { font-family: 'Playfair Display', Georgia, serif; font-size: 1.5rem; font-weight: 600; color: #2C2416; line-height: 1.3; margin: 0 0 0.5rem; } .ds-card-body { font-family: 'DM Sans', system-ui, sans-serif; font-size: 1rem; font-weight: 400; line-height: 1.65; color: #3D3529; margin: 0; }"
+    },
+    {
+      "name": "Navigation Header",
+      "kind": "nav",
+      "description": "Sticky top nav. Warm-linen backdrop blur, Kiln CTA.",
+      "html": "<header class=\"ds-nav\"><nav class=\"ds-nav-inner\"><a class=\"ds-nav-logo\" href=\"/\">Recipup</a><div class=\"ds-nav-links\"><a class=\"ds-nav-link\" href=\"/about\">About</a><a class=\"ds-nav-link\" href=\"/pricing\">Pricing</a></div><button class=\"ds-btn-nav-cta\">Get started →</button></nav></header>",
+      "css": ".ds-nav { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #E8E0D6; background: rgba(253, 250, 246, 0.95); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); } .ds-nav-inner { max-width: 72rem; margin: 0 auto; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; } .ds-nav-logo { font-family: 'Playfair Display', Georgia, serif; font-size: 1.25rem; font-weight: 600; color: #1C1A17; text-decoration: none; transition: opacity 150ms ease-out; } .ds-nav-logo:hover { opacity: 0.8; } .ds-nav-links { display: flex; align-items: center; gap: 1.75rem; } .ds-nav-link { font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; color: #8A7E72; text-decoration: none; transition: color 120ms ease-out; } .ds-nav-link:hover { color: #2C2416; } .ds-btn-nav-cta { background: #C4614A; color: #FDFAF6; padding: 0.5rem 1.25rem; border-radius: 9999px; border: none; font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 150ms ease-out, transform 150ms ease-out; } .ds-btn-nav-cta:hover { background: #E8957E; transform: translateY(-1px); }"
+    },
+    {
+      "name": "Pill Toggle (Segmented Control)",
+      "kind": "custom",
+      "description": "Grams/cups and batch-size selector. Oat container, Kitchen Linen active segment.",
+      "html": "<div class=\"ds-pill-toggle\"><button class=\"ds-pill-toggle-btn ds-active\">Grams</button><button class=\"ds-pill-toggle-btn\">Cups</button></div>",
+      "css": ".ds-pill-toggle { display: inline-flex; gap: 2px; background: #F7F3ED; border-radius: 9999px; padding: 2px; } .ds-pill-toggle-btn { background: transparent; color: #8A7E72; border: none; border-radius: 9999px; padding: 0.25rem 0.75rem; font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 120ms ease-out, color 120ms ease-out, box-shadow 120ms ease-out; } .ds-pill-toggle-btn.ds-active { background: #FDFAF6; color: #2C2416; box-shadow: 0 1px 3px rgba(28, 26, 23, 0.12); } .ds-pill-toggle-btn:hover:not(.ds-active) { color: #3D3529; } .ds-pill-toggle-btn:focus-visible { outline: 2px solid #C4614A; outline-offset: -2px; }"
+    },
+    {
+      "name": "Status Chips",
+      "kind": "chip",
+      "description": "Safety rating and nutrition coverage badges. Three semantic states.",
+      "html": "<div style=\"display:flex;gap:8px;align-items:center;flex-wrap:wrap;\"><span class=\"ds-chip-balanced\">✓ Mineral-balanced</span><span class=\"ds-chip-caution\">Good coverage</span><span class=\"ds-chip-alert\">Review recommended</span></div>",
+      "css": ".ds-chip-balanced, .ds-chip-caution, .ds-chip-alert { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: 9999px; padding: 0.375rem 0.75rem; font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; line-height: 1; } .ds-chip-balanced { background: #7A9E7A; color: #ffffff; } .ds-chip-caution { background: #E8BE4B; color: #2C2416; } .ds-chip-alert { background: #C4614A; color: #FDFAF6; }"
+    },
+    {
+      "name": "Eyebrow Label",
+      "kind": "custom",
+      "description": "Section marker and metadata tag. DM Sans 600 uppercase, tracked wide.",
+      "html": "<p class=\"ds-eyebrow\">How it works</p>",
+      "css": ".ds-eyebrow { font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #6A5C4E; line-height: 1.5; margin: 0; }"
+    },
+    {
+      "name": "Recipe Card Header",
+      "kind": "card",
+      "description": "The identity block of a recipe card: name, tagline, meta, safety badge.",
+      "html": "<article class=\"ds-recipe-card\"><div class=\"ds-recipe-header\"><div class=\"ds-recipe-header-content\"><h2 class=\"ds-recipe-name\">Slow Cooker Chicken &amp; Sweet Potato</h2><p class=\"ds-recipe-tagline\">Gentle on sensitive stomachs, rich in beta-carotene</p><div class=\"ds-recipe-meta\"><span>Slow cooker</span><span>·</span><span>15min prep</span><span>·</span><span>Serves 5 days</span></div></div><span class=\"ds-chip-balanced\">✓ Mineral-balanced</span></div><div class=\"ds-recipe-built-for\"><p class=\"ds-eyebrow\" style=\"color:#7A9E7A;margin-bottom:0.5rem;\">Built for Luna</p><p style=\"font-family:'DM Sans',system-ui,sans-serif;font-size:0.875rem;color:#2C2416;margin:0;\">Golden Retriever · 3yrs · 28kg · moderate activity</p></div></article>",
+      "css": ".ds-recipe-card { background: #FDFAF6; border-radius: 1.25rem; border: 1px solid #E8E0D6; box-shadow: 0 2px 12px 0 rgba(28, 26, 23, 0.07); overflow: hidden; } .ds-recipe-header { padding: 1.5rem; border-bottom: 1px solid #E8E0D6; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; } .ds-recipe-header-content { flex: 1; min-width: 0; } .ds-recipe-name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.5rem; font-weight: 600; color: #2C2416; line-height: 1.3; margin: 0 0 0.25rem; } .ds-recipe-tagline { font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.875rem; font-style: italic; color: #8A7E72; margin: 0 0 0.75rem; } .ds-recipe-meta { display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.75rem; color: #8A7E72; margin: 0; } .ds-recipe-built-for { background: #E8F0E8; border-bottom: 1px solid #E8E0D6; padding: 1rem 1.5rem; } .ds-chip-balanced, .ds-chip-caution, .ds-chip-alert { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: 9999px; padding: 0.375rem 0.75rem; font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; line-height: 1; white-space: nowrap; } .ds-chip-balanced { background: #7A9E7A; color: #ffffff; } .ds-chip-caution { background: #E8BE4B; color: #2C2416; } .ds-chip-alert { background: #C4614A; color: #FDFAF6; } .ds-eyebrow { font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #6A5C4E; line-height: 1.5; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Knowledgeable Friend",
+    "overview": "Recipup's design speaks with the authority of someone who has done the research and the warmth of someone who genuinely cares about your dog. The system never performs expertise, never uses clinical distance as a substitute for confidence, and never deploys warmth as pure decoration. Every token, every surface choice, every spacing decision exists to make the owner feel certain first, then at ease, then quietly proud of the meal they are about to cook.\n\nThe palette is kitchen-native: warm whites with the faint hue of dried linen, terracotta accents that echo fired clay and Dutch brick, deep herb-garden greens for surfaces that carry authority. Nothing in this palette could be mistaken for a medical interface or a SaaS analytics product.\n\nTypography pairs Playfair Display with DM Sans: the serif lends authority and warmth to everything that matters emotionally; DM Sans handles instruction, data, and navigation with precision. The two fonts never compete because they never appear at the same size doing the same job.",
+    "keyCharacteristics": [
+      "Warm-neutral surface hierarchy: kitchen-linen → oat → sand → sand-deep, no grey in the stack",
+      "Playfair Display for all headings (H1–H3), never for labels or data",
+      "Pill-shaped CTAs exclusively; rectangular buttons do not exist in this system",
+      "Two named shadows, used sparingly; tonal surface changes carry most of the depth work",
+      "Kiln (terracotta) at 10% or less of any given screen; its rarity is the point",
+      "Zero glassmorphism, zero gradient text, zero decorative side-stripe borders"
+    ],
+    "rules": [
+      { "name": "The Kitchen Warmth Rule",   "body": "Every neutral in this system is tinted toward the warm ochre-brown hue family. Cold greys (#888888, #CCCCCC, system grey) are prohibited. If a neutral token looks grey when placed next to Kitchen Linen, it is wrong.", "section": "colors" },
+      { "name": "The Kiln Rarity Rule",      "body": "Kiln appears on no more than 10% of any given screen. It is the product's single assertive voice. When Kiln appears on every button, badge, link, and highlight simultaneously, it loses its authority.", "section": "colors" },
+      { "name": "The Serif Boundary Rule",   "body": "Playfair Display is for content that carries emotional or nutritional weight: headings, dog names, recipe names. It is prohibited in navigation links, data readouts, error messages, labels, or instructional body text.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule",  "body": "Shadows are never decorative. A card with no interactivity gets Card Ambient. A card with hover behaviour gets Card Lift on hover only. Nothing gets Card Lift at rest. Side-stripe border-left accents are prohibited as substitutes for elevation signals.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Playfair Display for all H1–H3 headings. DM Sans for every other element.",
+      "Do use Kitchen Linen (#FDFAF6) as the default page and card background. Never true white.",
+      "Do use the warm-neutral surface stack (kitchen-linen → oat → sand → sand-deep) to convey depth.",
+      "Do make every CTA a full pill (border-radius: 9999px). Rectangular buttons are not in this system.",
+      "Do use Kiln on at most 10% of any screen. One dominant Kiln use per visual group.",
+      "Do use Windowsill Sage exclusively for positive states. Never for caution or warnings.",
+      "Do use Set Honey for caution; Kiln for alerts and actions; Garden Shade for authority surfaces.",
+      "Do cap body text at 65–75ch line length.",
+      "Do vary padding between nesting levels. Uniform padding is monotony.",
+      "Do include the 'Built For' band on every recipe card. It is the evidence of personalisation."
+    ],
+    "donts": [
+      "Don't use cold greys. System greys (#888888, #CCCCCC) are prohibited. Every neutral must be warm-tinted.",
+      "Don't use Playfair Display below heading level. The Serif Boundary Rule is absolute.",
+      "Don't build anything that looks like a sterile health-tech product. White backgrounds, clinical blues, hospital portal layout: explicitly prohibited.",
+      "Don't use pet industry kitsch. No decorative paw prints, bubble fonts, or primary-colour palettes.",
+      "Don't build generic SaaS interfaces. Purple gradient heroes, identical stat-card grids, and hero-metric templates are prohibited.",
+      "Don't put border-left or border-right greater than 1px as a coloured stripe accent on cards or callouts.",
+      "Don't use gradient text (background-clip: text). Use weight and size for emphasis.",
+      "Don't nest cards inside cards.",
+      "Don't use Kiln on both a CTA and an adjacent status badge simultaneously.",
+      "Don't animate CSS layout properties (height, padding, margin). Use grid-rows or opacity + transform."
+    ]
+  }
+}
