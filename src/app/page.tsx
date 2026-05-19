@@ -113,7 +113,7 @@ export default async function Home() {
             {/* Left: content */}
             <div className="flex flex-col gap-6">
               <p className="eyebrow">Real food. Cooked by you.</p>
-              <h1 className="font-heading text-3xl font-semibold leading-tight text-[var(--color-ink)] md:text-5xl">
+              <h1 className="font-heading text-3xl sm:text-4xl font-semibold leading-tight text-[var(--color-ink)] md:text-5xl">
                 The freshest food your dog will ever eat — made in your kitchen.
               </h1>
               <p className="text-lg leading-relaxed text-[var(--color-ink-soft)]">
@@ -135,9 +135,9 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Right: recipe preview card — floats gently to signal a live product */}
+            {/* Right: recipe preview card — hidden on mobile, floats on md+ */}
             <div
-              className="rounded-2xl bg-[var(--color-sand)] p-8 flex flex-col gap-5"
+              className="hidden md:flex rounded-2xl bg-[var(--color-sand)] p-8 flex-col gap-5"
               style={{ animation: "float-card 5s ease-in-out infinite" }}
             >
               <div className="flex items-center gap-3">

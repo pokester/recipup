@@ -5,10 +5,10 @@ export function SiteFooter() {
   return (
     <footer className="bg-[var(--color-ink-900)]">
       <div className="mx-auto max-w-6xl px-6 py-16 md:px-10">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-10">
           {/* Brand */}
           <div>
-            <Image src="/logo-white.png" alt="Recipup" width={130} height={36} />
+            <Image src="/logo-white.png" alt="Recipup" width={130} height={36} className="max-w-full h-auto" />
             <p className="mt-3 text-sm text-[var(--color-warm-white)]/60">
               Real recipes. Happy dogs.
             </p>
